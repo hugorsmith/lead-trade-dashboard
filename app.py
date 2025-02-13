@@ -117,15 +117,15 @@ for category, products in HS_CODE_CATEGORIES.items():
     for hs_code, description in products:
         if st.sidebar.checkbox(
             f"{hs_code} - {description}", 
-            value=False,
+            value=True,  # Changed back to True to have all selected by default
             key=f"hs_code_{hs_code}"
         ):
             selected_hs_codes.append(hs_code)
 
-# Show warning and stop if no products selected
+# Ensure at least one HS code is selected
 if not selected_hs_codes:
-    st.warning("Please select at least one product from the sidebar to view the analysis.")
-    st.stop()  # Stop execution here if no products selected
+    st.sidebar.warning("Please select at least one product")
+    selected_hs_codes = [list(HS_CODE_CATEGORIES.values())[0][0][0]]  # First HS code as fallback
 
 # Replace the metrics year selector with a date range selector
 st.sidebar.subheader("Date Range")
