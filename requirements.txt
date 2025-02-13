@@ -1,3 +1,5 @@
 streamlit
 pandas
-plotly 
+plotly
+numpy
+country_converter 
