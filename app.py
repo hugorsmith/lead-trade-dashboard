@@ -102,14 +102,28 @@ imports = df_filtered[df_filtered['importer_name'] == selected_country].copy()
 
 # Add key metrics at the top
 st.subheader("Key Metrics (tons)")
+
+# Add year selector for metrics
+available_years = sorted(df_filtered['year'].unique())
+selected_metrics_year = st.selectbox(
+    'Select Year for Metrics',
+    available_years,
+    index=len(available_years)-1,
+    key='metrics_year_selector'
+)
+
+# Filter data for selected year
+exports_year = exports[exports['year'] == selected_metrics_year]
+imports_year = imports[imports['year'] == selected_metrics_year]
+
 metrics_col1, metrics_col2, metrics_col3, metrics_col4 = st.columns(4)
 
 with metrics_col1:
-    total_exports = exports['quantity'].sum()
+    total_exports = exports_year['quantity'].sum()
     st.metric("Total Export Volume", f"{total_exports:,.0f}")
 
 with metrics_col2:
-    total_imports = imports['quantity'].sum()
+    total_imports = imports_year['quantity'].sum()
     st.metric("Total Import Volume", f"{total_imports:,.0f}")
 
 with metrics_col3:
@@ -117,7 +131,7 @@ with metrics_col3:
     st.metric("Trade Balance", f"{trade_balance:,.0f}")
 
 with metrics_col4:
-    num_partners = len(set(exports['importer_name'].unique()) | set(imports['exporter_name'].unique()))
+    num_partners = len(set(exports_year['importer_name'].unique()) | set(imports_year['exporter_name'].unique()))
     st.metric("Trading Partners", f"{num_partners}")
 
 # Create tabs for exports and imports
@@ -283,14 +297,25 @@ with tab2:
         key='import_year_selector'
     )
     
-    # Filter imports for selected year
+    # Filter imports for selected year and calculate total quantity per exporter
+    exporter_totals = (
+        imports[imports['year'] == selected_year_imports]
+        .groupby('exporter_name')['quantity']
+        .sum()
+        .sort_values(ascending=False)
+        .head(20)
+        .index.tolist()
+    )
+    
+    # Filter and sort data based on top exporters
     top_imports = (
         imports[imports['year'] == selected_year_imports]
-        .groupby(['exporter_name', 'product'])['quantity']  # Changed from 'category' to 'product'
+        .groupby(['exporter_name', 'product'])['quantity']
         .sum()
         .reset_index()
-        .sort_values('quantity', ascending=False)
     )
+    # Filter for top exporters and sort by total quantity
+    top_imports = top_imports[top_imports['exporter_name'].isin(exporter_totals)]
     
     # Add HS code labels
     top_imports['product_label'] = top_imports['product'].map(hs_code_labels)
