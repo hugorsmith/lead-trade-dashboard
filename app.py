@@ -9,10 +9,10 @@ from components.analytics import add_simple_analytics
 st.set_page_config(
     page_title="Lead Trade Analysis",
     page_icon="📊",
-    layout="wide"
+    layout="wide"   
 )
 
-# Add after st.set_page_config()
+# Add analytics
 add_simple_analytics()
 
 # Title and description
