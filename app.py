@@ -14,6 +14,29 @@ st.set_page_config(
 # Title and description
 st.title("Global Lead Trade Analysis Dashboard")
 st.markdown("""
+    <style>
+    @media (max-width: 768px) {
+        .mobile-warning {
+            display: block;
+            background-color: rgba(255, 193, 7, 0.1);
+            border-left: 5px solid #ffc107;
+            padding: 1rem;
+            margin: 1rem 0;
+            color: #ffc107;
+        }
+    }
+    @media (min-width: 769px) {
+        .mobile-warning {
+            display: none;
+        }
+    }
+    </style>
+    <div class="mobile-warning">
+        📱 This dashboard is best viewed on desktop devices for the full interactive experience.
+    </div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
     This dashboard provides interactive visualizations of global lead metal trade data from 2012-2022.
     Select a country and HS codes to explore trade patterns by weight (tons).
 """)
