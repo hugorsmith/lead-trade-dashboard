@@ -490,45 +490,38 @@ with tab2:
     st.subheader("Top Import Sources")
     
     # Add year selector for imports
+    available_years = sorted(imports['year'].unique(), reverse=True)  # Sort years descending
     selected_year_imports = st.selectbox(
         'Select Year',
         available_years,
-        index=len(available_years)-1,
+        index=0,  # Changed to 0 to default to most recent year
         key='import_year_selector'
     )
     
     # Filter imports for selected year
     imports_selected_year = imports[imports['year'] == selected_year_imports]
     
-    # Calculate total quantities per country to determine top sources
-    source_totals = (
+    # Calculate total quantities and get top 20 countries
+    country_totals = (
         imports_selected_year
         .groupby('exporter_name')['quantity']
         .sum()
         .sort_values(ascending=False)
         .head(20)
-        .index.tolist()
     )
     
-    # Get detailed breakdown by product for these countries
+    # Get the detailed breakdown for top countries
     top_imports = (
-        imports_selected_year[imports_selected_year['exporter_name'].isin(source_totals)]
-        .groupby(['exporter_name', 'product'])['quantity']
-        .sum()
-        .reset_index()
+        imports_selected_year[imports_selected_year['exporter_name'].isin(country_totals.index)]
+        .copy()
     )
     
     # Add HS code labels
     top_imports['product_label'] = top_imports['product'].map(hs_code_labels)
     
-    # Sort the data frame to match the source_totals order
-    top_imports['exporter_name'] = pd.Categorical(
-        top_imports['exporter_name'], 
-        categories=source_totals, 
-        ordered=True
-    )
-    top_imports = top_imports.sort_values('exporter_name')
-
+    # Sort the countries by their total volume
+    country_order = country_totals.index.tolist()
+    
     fig4 = px.bar(
         top_imports,
         x='exporter_name',
@@ -540,8 +533,11 @@ with tab2:
             'product_label': 'HS Code'
         },
         color_discrete_sequence=CUSTOM_COLORS,
+        category_orders={'exporter_name': country_order},  # Explicitly set the order
         template=get_plotly_template()
     )
+    
+    # Rest of the layout remains the same
     fig4.update_layout(
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
@@ -553,7 +549,6 @@ with tab2:
             xanchor="center",
             x=0.5
         ),
-        # Only apply custom colors in dark mode
         font=dict(
             color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
             size=12
@@ -567,7 +562,10 @@ with tab2:
         ),
         xaxis=dict(
             gridcolor='rgba(128,128,128,0.1)', 
-            linecolor='rgba(128,128,128,0.2)'
+            linecolor='rgba(128,128,128,0.2)',
+            tickangle=30,  # Added to match exports
+            tickfont=dict(size=9),  # Added to match exports
+            automargin=True  # Added to match exports
         ),
         yaxis=dict(
             gridcolor='rgba(128,128,128,0.1)', 
