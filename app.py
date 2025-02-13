@@ -15,6 +15,31 @@ st.set_page_config(
 st.title("Global Lead Trade Analysis Dashboard")
 st.markdown("""
     <style>
+    .main {
+        background-color: #0A1929;
+        color: #E0E0E0;
+    }
+    .stMetric {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 5px;
+        padding: 10px;
+    }
+    /* Light mode - darker text */
+    [data-theme="light"] .stMetric label {
+        color: #2C3E50 !important;
+    }
+    /* Dark mode - light text */
+    [data-theme="dark"] .stMetric label {
+        color: #E0E0E0 !important;
+    }
+    /* Light mode - darker text for headers */
+    [data-theme="light"] h1, [data-theme="light"] h2, [data-theme="light"] h3, [data-theme="light"] p {
+        color: #2C3E50 !important;
+    }
+    /* Dark mode - light text for headers */
+    [data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3, [data-theme="dark"] p {
+        color: #E0E0E0 !important;
+    }
     @media (max-width: 768px) {
         .mobile-warning {
             display: block;
@@ -80,6 +105,14 @@ CUSTOM_COLORS = [
     '#FF7445',  # Orange
     '#FFB000',  # Gold
 ]
+
+# Create theme-aware plotly template
+def get_plotly_template():
+    is_light_theme = st.get_option("theme.base") == "light"
+    if is_light_theme:
+        return 'plotly'  # Use default light theme
+    else:
+        return 'plotly_dark'  # Use built-in dark theme
 
 # Define the HS codes and their categories at the top level (before any functions)
 HS_CODE_CATEGORIES = {
@@ -257,14 +290,14 @@ with tab1:
         x='year',
         y='quantity',
         color='product_label',
-        title=f'Export Volumes for {selected_country} by HS Code',
         labels={
             'quantity': 'Volume (tons)',
             'year': 'Year',
             'product_label': 'HS Code'
         },
         barmode='stack',
-        color_discrete_sequence=CUSTOM_COLORS
+        color_discrete_sequence=CUSTOM_COLORS,
+        template=get_plotly_template()
     )
     # Customize the layout
     fig1.update_layout(
@@ -274,14 +307,32 @@ with tab1:
             title="HS Codes",
             orientation="h",
             yanchor="bottom",
-            y=-0.5,
+            y=-0.55,
             xanchor="center",
             x=0.5
         ),
-        font=dict(color='#E0E0E0'),
-        title_font_color='#E0E0E0',
-        xaxis=dict(gridcolor='rgba(128,128,128,0.1)', linecolor='rgba(128,128,128,0.2)'),
-        yaxis=dict(gridcolor='rgba(128,128,128,0.1)', linecolor='rgba(128,128,128,0.2)')
+        # Only apply custom colors in dark mode
+        font=dict(
+            color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
+            size=12
+        ),
+        title=dict(
+            text=f'Export Volumes for {selected_country} by HS Code',
+            font=dict(
+                color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
+                size=16
+            )
+        ),
+        xaxis=dict(
+            gridcolor='rgba(128,128,128,0.1)', 
+            linecolor='rgba(128,128,128,0.2)'
+        ),
+        yaxis=dict(
+            gridcolor='rgba(128,128,128,0.1)', 
+            linecolor='rgba(128,128,128,0.2)'
+        ),
+        margin=dict(b=120, l=50, r=50, t=50),
+        height=550
     )
     st.plotly_chart(fig1, use_container_width=True)
 
@@ -325,14 +376,14 @@ with tab1:
         x='importer_name',
         y='quantity',
         color='product_label',
-        title=f'Top Export Destinations for {selected_country} ({selected_year})',
         labels={
             'quantity': 'Volume (tons)',
             'importer_name': 'Importing Country',
             'product_label': 'HS Code'
         },
         color_discrete_sequence=CUSTOM_COLORS,
-        category_orders={'importer_name': country_order}  # Explicitly set the order
+        category_orders={'importer_name': country_order},  # Explicitly set the order
+        template=get_plotly_template()
     )
     fig2.update_layout(
         plot_bgcolor='rgba(0,0,0,0)',
@@ -341,25 +392,35 @@ with tab1:
             title="HS Codes",
             orientation="h",
             yanchor="bottom",
-            y=-0.5,
+            y=-0.55,
             xanchor="center",
             x=0.5
         ),
-        font=dict(color='#E0E0E0'),
-        title_font_color='#E0E0E0',
+        # Only apply custom colors in dark mode
+        font=dict(
+            color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
+            size=12
+        ),
+        title=dict(
+            text=f'Top Export Destinations for {selected_country} ({selected_year})',
+            font=dict(
+                color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
+                size=16
+            )
+        ),
         xaxis=dict(
             gridcolor='rgba(128,128,128,0.1)', 
             linecolor='rgba(128,128,128,0.2)',
-            tickangle=30,  # Less extreme angle
-            tickfont=dict(size=9),  # Smaller font
-            automargin=True  # Automatically adjust margins
+            tickangle=30,
+            tickfont=dict(size=9),
+            automargin=True
         ),
         yaxis=dict(
             gridcolor='rgba(128,128,128,0.1)', 
             linecolor='rgba(128,128,128,0.2)'
         ),
-        margin=dict(b=100, l=50, r=50, t=50),  # Explicit margins
-        height=600  # Make the chart taller
+        margin=dict(b=120, l=50, r=50, t=50),
+        height=550
     )
     st.plotly_chart(fig2, use_container_width=True)
 
@@ -380,14 +441,14 @@ with tab2:
         x='year',
         y='quantity',
         color='product_label',
-        title=f'Import Volumes for {selected_country} by HS Code',
         labels={
             'quantity': 'Volume (tons)',
             'year': 'Year',
             'product_label': 'HS Code'
         },
         barmode='stack',
-        color_discrete_sequence=CUSTOM_COLORS
+        color_discrete_sequence=CUSTOM_COLORS,
+        template=get_plotly_template()
     )
     fig3.update_layout(
         plot_bgcolor='rgba(0,0,0,0)',
@@ -396,14 +457,32 @@ with tab2:
             title="HS Codes",
             orientation="h",
             yanchor="bottom",
-            y=-0.5,
+            y=-0.55,
             xanchor="center",
             x=0.5
         ),
-        font=dict(color='#E0E0E0'),
-        title_font_color='#E0E0E0',
-        xaxis=dict(gridcolor='rgba(128,128,128,0.1)', linecolor='rgba(128,128,128,0.2)'),
-        yaxis=dict(gridcolor='rgba(128,128,128,0.1)', linecolor='rgba(128,128,128,0.2)')
+        # Only apply custom colors in dark mode
+        font=dict(
+            color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
+            size=12
+        ),
+        title=dict(
+            text=f'Import Volumes for {selected_country} by HS Code',
+            font=dict(
+                color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
+                size=16
+            )
+        ),
+        xaxis=dict(
+            gridcolor='rgba(128,128,128,0.1)', 
+            linecolor='rgba(128,128,128,0.2)'
+        ),
+        yaxis=dict(
+            gridcolor='rgba(128,128,128,0.1)', 
+            linecolor='rgba(128,128,128,0.2)'
+        ),
+        margin=dict(b=120, l=50, r=50, t=50),
+        height=550
     )
     st.plotly_chart(fig3, use_container_width=True)
 
@@ -455,13 +534,13 @@ with tab2:
         x='exporter_name',
         y='quantity',
         color='product_label',
-        title=f'Top Import Sources for {selected_country} ({selected_year_imports})',
         labels={
             'quantity': 'Volume (tons)',
             'exporter_name': 'Exporting Country',
             'product_label': 'HS Code'
         },
-        color_discrete_sequence=CUSTOM_COLORS
+        color_discrete_sequence=CUSTOM_COLORS,
+        template=get_plotly_template()
     )
     fig4.update_layout(
         plot_bgcolor='rgba(0,0,0,0)',
@@ -470,34 +549,34 @@ with tab2:
             title="HS Codes",
             orientation="h",
             yanchor="bottom",
-            y=-0.5,
+            y=-0.55,
             xanchor="center",
             x=0.5
         ),
-        font=dict(color='#E0E0E0'),
-        title_font_color='#E0E0E0',
-        xaxis=dict(gridcolor='rgba(128,128,128,0.1)', linecolor='rgba(128,128,128,0.2)'),
-        yaxis=dict(gridcolor='rgba(128,128,128,0.1)', linecolor='rgba(128,128,128,0.2)')
+        # Only apply custom colors in dark mode
+        font=dict(
+            color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
+            size=12
+        ),
+        title=dict(
+            text=f'Top Import Sources for {selected_country} ({selected_year_imports})',
+            font=dict(
+                color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
+                size=16
+            )
+        ),
+        xaxis=dict(
+            gridcolor='rgba(128,128,128,0.1)', 
+            linecolor='rgba(128,128,128,0.2)'
+        ),
+        yaxis=dict(
+            gridcolor='rgba(128,128,128,0.1)', 
+            linecolor='rgba(128,128,128,0.2)'
+        ),
+        margin=dict(b=120, l=50, r=50, t=50),
+        height=550
     )
     st.plotly_chart(fig4, use_container_width=True)
-
-# Add this at the beginning of the file, after the st.set_page_config
-st.markdown("""
-    <style>
-    .main {
-        background-color: #0A1929;
-        color: #E0E0E0;
-    }
-    .stMetric {
-        background-color: rgba(255, 255, 255, 0.1);
-        border-radius: 5px;
-        padding: 10px;
-    }
-    .stMetric label {
-        color: #E0E0E0 !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
 
 # Add after the filters section
 st.sidebar.subheader("Download Data")
