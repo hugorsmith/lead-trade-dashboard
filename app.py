@@ -3,17 +3,13 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
-from components.analytics import add_simple_analytics
 
 # Page configuration
 st.set_page_config(
     page_title="Lead Trade Analysis",
     page_icon="📊",
-    layout="wide"   
+    layout="wide"
 )
-
-# Add analytics
-add_simple_analytics()
 
 # Title and description
 st.title("Global Lead Trade Analysis Dashboard")
