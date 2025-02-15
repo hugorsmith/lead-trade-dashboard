@@ -62,7 +62,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.markdown("""
-    This dashboard provides interactive visualizations of global lead metal trade data from 2012-2022.
+    This dashboard provides interactive visualizations of global lead metal trade data from 2012-2023.
     Select a country and HS codes to explore trade patterns by weight (tons).
 """)
 
