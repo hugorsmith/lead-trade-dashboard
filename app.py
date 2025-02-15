@@ -209,12 +209,7 @@ st.subheader("Key Metrics (tons)")
 
 # Add year selector for metrics
 available_years = sorted(df_filtered['year'].unique(), reverse=True)  # Sort in descending order
-selected_metrics_year = st.selectbox(
-    'Select Year for Metrics',
-    available_years,
-    index=0,  # Default to first (most recent) year
-    key='metrics_year_selector'
-)
+selected_metrics_year = df_filtered.year.max()
 
 # Filter data for selected year
 exports_year = exports[exports['year'] == selected_metrics_year]
