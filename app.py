@@ -141,19 +141,29 @@ HS_TO_CATEGORY = {
 
 # Load the data
 @st.cache_data
-def load_data():
+def load_trade_data():
     try:
         with st.spinner('Loading trade data...'):
             df = pd.read_csv('lead_trade_data.csv')
             df['product'] = df['product'].astype(int)
             df['category'] = df['product'].map(HS_TO_CATEGORY)
-            country_df = pd.read_csv('countries.csv')
-            return df, country_df
+            return df
     except Exception as e:
-        st.error(f"Error loading data: {str(e)}")
+        st.error(f"Error loading trade data: {str(e)}")
         return None
+    
+@st.cache_data
+def load_country_data():
+    try:
+        with st.spinner('Loading trade data...'):
+            country_df = pd.read_csv('countries.csv')
+            return country_df
+    except Exception as e:
+        st.error(f"Error loading country data: {str(e)}")
+        return None, None
 
-df, country_df = load_data()
+df = load_trade_data()
+country_df = load_country_data()
 if df is None or country_df is None:
     st.stop()
 
