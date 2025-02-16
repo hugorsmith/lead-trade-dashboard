@@ -259,6 +259,92 @@ with metrics_col4:
     num_partners = len(set(exports_year['importer_name'].unique()) | set(imports_year['exporter_name'].unique()))
     st.metric("Trading Partners", f"{num_partners}")
 
+# Create labels for the HS codes
+hs_code_labels = {
+    code: f"{code} - {desc}"
+    for category, products in HS_CODE_CATEGORIES.items()
+    for code, desc in products
+}
+
+yearly_exports = (
+    exports.groupby(['year', 'category', 'product'])['quantity']
+    .sum()
+    .reset_index()
+    .assign(product_label = lambda x: x['product'].map(hs_code_labels))
+)
+
+yearly_imports = (
+    imports.groupby(['year', 'category', 'product'])['quantity']
+    .sum()
+    .reset_index()
+    .assign(product_label = lambda x: x['product'].map(hs_code_labels))
+)
+
+# Show trade imbalance
+yearly_imports_exports = (
+    pd.concat([
+        yearly_imports.assign(trade_direction = "Imports"),
+        yearly_exports.assign(trade_direction = "Exports")
+    ])
+    .groupby(['year','category','trade_direction'])['quantity']
+    .sum()
+    .reset_index()
+    .pivot(index=['year','category'], columns='trade_direction', values='quantity')
+    .reset_index()
+    .fillna(0)
+    .assign(imbalance = lambda x: x.Exports - x.Imports)
+)
+
+fig0 = px.bar(
+    yearly_imports_exports,
+    x='year',
+    y='imbalance',
+    color='category',
+    barmode='relative',
+    labels={
+        'imbalance': 'Exports - Imports (tons)',
+        'year': 'Year',
+        'category': 'Category'
+    },
+    color_discrete_sequence=CUSTOM_COLORS,
+)
+
+# Customize the layout
+fig0.update_layout(
+    plot_bgcolor='rgba(0,0,0,0)',
+    paper_bgcolor='rgba(0,0,0,0)',
+    legend=dict(
+        title="",
+        orientation="h",
+        y=1.05,
+        x=0
+    ),
+    # Only apply custom colors in dark mode
+    font=dict(
+        color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
+        size=12
+    ),
+    title=dict(
+        text=f'Export-Import Imbalance for {selected_country} by Category',
+        font=dict(
+            color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
+            size=16
+        )
+    ),
+    xaxis=dict(
+        gridcolor='rgba(128,128,128,0.1)', 
+        linecolor='rgba(128,128,128,0.2)'
+    ),
+    yaxis=dict(
+        gridcolor='rgba(128,128,128,0.1)', 
+        linecolor='rgba(128,128,128,0.2)'
+    ),
+    margin=dict(b=120, l=50, r=50, t=50),
+    height=400
+)
+
+st.plotly_chart(fig0, use_container_width=True)
+
 # Create tabs for exports and imports
 tab1, tab2 = st.tabs(["Exports Analysis", "Imports Analysis"])
 
@@ -266,20 +352,6 @@ with tab1:
     st.header("Exports Analysis")
     
     # Time series of exports by HS code
-    yearly_exports = (
-        exports.groupby(['year', 'category', 'product'])['quantity']
-        .sum()
-        .reset_index()
-    )
-    
-    # Create labels for the HS codes
-    hs_code_labels = {
-        code: f"{code} - {desc}"
-        for category, products in HS_CODE_CATEGORIES.items()
-        for code, desc in products
-    }
-    yearly_exports['product_label'] = yearly_exports['product'].map(hs_code_labels)
-    
     fig1 = px.bar(
         yearly_exports,
         x='year',
@@ -423,13 +495,6 @@ with tab2:
     st.header("Imports Analysis")
     
     # Time series of imports by HS code
-    yearly_imports = (
-        imports.groupby(['year', 'category', 'product'])['quantity']
-        .sum()
-        .reset_index()
-    )
-    
-    yearly_imports['product_label'] = yearly_imports['product'].map(hs_code_labels)
     
     fig3 = px.bar(
         yearly_imports,
