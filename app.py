@@ -61,14 +61,13 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
+# Create a container div for text and both links
 st.markdown("""
-    This dashboard provides interactive visualizations of global lead metal trade data from 2012-2022.
-    Select a country and HS codes to explore trade patterns by weight (tons).
-""")
-
-# Create a container div for both links
-st.markdown("""
-    <div style='display: flex; gap: 12px; align-items: center; margin-bottom: 20px;'>
+    <div style='display: flex; gap: 20px; align-items: center; margin-bottom: 20px;'>
+        <div>
+            This dashboard provides interactive visualizations of global lead metal trade data from 2012-2022.
+            Select a country and HS codes to explore trade patterns by weight (tons).
+        </div>
         <a href='https://leadbatteries.substack.com/' target='_blank'>
             <button style='
                 background-color: #FF4B4B;
