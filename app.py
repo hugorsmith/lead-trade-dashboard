@@ -477,6 +477,9 @@ with tab1:
     # Get the detailed breakdown for top countries
     top_exports = (
         exports_selected_year[exports_selected_year['importer_name'].isin(country_totals.index)]
+        .groupby(['year','product','importer_name'])['quantity']
+        .sum()
+        .reset_index()
         .copy()  # Create a copy to avoid SettingWithCopyWarning
     )
     
@@ -621,6 +624,9 @@ with tab2:
     # Get the detailed breakdown for top countries
     top_imports = (
         imports_selected_year[imports_selected_year['exporter_name'].isin(country_totals.index)]
+        .groupby(['year','product','exporter_name'])['quantity']
+        .sum()
+        .reset_index()
         .copy()
     )
     
