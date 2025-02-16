@@ -64,7 +64,7 @@ st.markdown("""
 # Create a container div for text and both links
 st.markdown("""
     <div>
-        Based on global lead metal trade data from 2012-2022.
+        Based on global lead metal trade data from 2012-2023.
         Select a country and HS codes to explore trade patterns by weight (tons).
     </div>
     <br>
@@ -94,17 +94,67 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# Add this color palette definition after the HS_CODE_CATEGORIES definition
-CUSTOM_COLORS = [
-    '#00C805',  # Bright green
-    '#0FDDAF',  # Teal
-    '#2B95FF',  # Bright blue
-    '#665AFF',  # Purple
-    '#FF5AE5',  # Pink
-    '#FF5A8F',  # Rose
-    '#FF7445',  # Orange
-    '#FFB000',  # Gold
-]
+# Define the HS codes and their categories at the top level (before any color definitions)
+HS_CODE_CATEGORIES = {
+    'Ores & Concentrates': [
+        ('260700', 'Lead ores and concentrates')
+    ],
+    'New Lead': [
+        ('780110', 'Refined lead - unwrought'),
+        ('780191', 'Other unwrought lead'),
+        ('780199', 'Other refined lead')
+    ],
+    'New Batteries': [
+        ('850710', 'New lead-acid batteries for starting engines'),
+        ('850720', 'Other new lead-acid batteries')
+    ],
+    'Used Batteries & Scrap': [
+        ('854810', 'Waste batteries'),
+        ('780200', 'Lead waste and scrap')
+    ]
+}
+
+# Add color definitions after HS_CODE_CATEGORIES
+CATEGORY_COLORS = {
+    'Ores & Concentrates': {
+        'base': '#A0522D',  # Sienna brown
+        'codes': {
+            '260700': '#A0522D'  # Same as base since only one code
+        }
+    },
+    'New Lead': {
+        'base': '#8C8C8C',  # Base gray
+        'codes': {
+            '780110': '#707070',  # Darker gray
+            '780191': '#8C8C8C',  # Base gray
+            '780199': '#A5A5A5'   # Lighter gray
+        }
+    },
+    'New Batteries': {
+        'base': '#228B22',  # Forest green
+        'codes': {
+            '850710': '#1B6B1B',  # Darker green
+            '850720': '#3DA23D'   # Lighter green
+        }
+    },
+    'Used Batteries & Scrap': {
+        'base': '#FF7F00',  # Bright orange
+        'codes': {
+            '854810': '#E66E00',  # Darker orange
+            '780200': '#FF9933'   # Lighter orange
+        }
+    }
+}
+
+# Create a flat mapping of HS codes to colors for easy lookup
+HS_CODE_COLORS = {
+    hs_code: category_data['codes'][hs_code]
+    for category, category_data in CATEGORY_COLORS.items()
+    for hs_code in category_data['codes']
+}
+
+# Create a list of category colors in the same order as categories
+CATEGORY_COLOR_LIST = [CATEGORY_COLORS[cat]['base'] for cat in HS_CODE_CATEGORIES.keys()]
 
 # Create theme-aware plotly template
 def get_plotly_template():
@@ -113,24 +163,6 @@ def get_plotly_template():
         return 'plotly'  # Use default light theme
     else:
         return 'plotly_dark'  # Use built-in dark theme
-
-# Define the HS codes and their categories at the top level (before any functions)
-HS_CODE_CATEGORIES = {
-    'New Lead': [
-        (260700, 'Lead ores and concentrates'),
-        (780110, 'Refined lead - unwrought'),
-        (780191, 'Other unwrought lead'),
-        (780199, 'Other refined lead')
-    ],
-    'New Batteries': [
-        (850710, 'New lead-acid batteries for starting engines'),
-        (850720, 'Other new lead-acid batteries')
-    ],
-    'Used Batteries & Scrap': [
-        (854810, 'Waste batteries'),
-        (780200, 'Lead waste and scrap')
-    ]
-}
 
 # Create a mapping dictionary for the category assignment
 HS_TO_CATEGORY = {
@@ -145,7 +177,8 @@ def load_trade_data():
     try:
         with st.spinner('Loading trade data...'):
             df = pd.read_csv('lead_trade_data.csv')
-            df['product'] = df['product'].astype(int)
+            # Convert product codes to strings with leading zeros preserved
+            df['product'] = df['product'].astype(str).str.zfill(6)
             df['category'] = df['product'].map(HS_TO_CATEGORY)
             return df
     except Exception as e:
@@ -354,7 +387,7 @@ fig0 = px.bar(
         'year': 'Year',
         'category': 'Category'
     },
-    color_discrete_sequence=CUSTOM_COLORS,
+    color_discrete_sequence=CATEGORY_COLOR_LIST,
 )
 
 # Customize the layout
@@ -385,7 +418,9 @@ fig0.update_layout(
     ),
     yaxis=dict(
         gridcolor='rgba(128,128,128,0.1)', 
-        linecolor='rgba(128,128,128,0.2)'
+        linecolor='rgba(128,128,128,0.2)',
+        zeroline=True,  # Added: more visible zero line
+        zerolinewidth=2  # Added: thicker zero line
     ),
     margin=dict(b=120, l=50, r=50, t=50),
     height=400
@@ -411,7 +446,7 @@ with tab1:
             'product_label': 'HS Code'
         },
         barmode='stack',
-        color_discrete_sequence=CUSTOM_COLORS,
+        color_discrete_sequence=[HS_CODE_COLORS[code] for code in selected_hs_codes],
         template=get_plotly_template()
     )
     # Customize the layout
@@ -499,7 +534,7 @@ with tab1:
             'importer_name': 'Importing Country',
             'product_label': 'HS Code'
         },
-        color_discrete_sequence=CUSTOM_COLORS,
+        color_discrete_sequence=[HS_CODE_COLORS[code] for code in selected_hs_codes],
         category_orders={'importer_name': country_order},  # Explicitly set the order
         template=get_plotly_template()
     )
@@ -558,7 +593,7 @@ with tab2:
             'product_label': 'HS Code'
         },
         barmode='stack',
-        color_discrete_sequence=CUSTOM_COLORS,
+        color_discrete_sequence=[HS_CODE_COLORS[code] for code in selected_hs_codes],
         template=get_plotly_template()
     )
     fig3.update_layout(
@@ -646,7 +681,7 @@ with tab2:
             'exporter_name': 'Exporting Country',
             'product_label': 'HS Code'
         },
-        color_discrete_sequence=CUSTOM_COLORS,
+        color_discrete_sequence=[HS_CODE_COLORS[code] for code in selected_hs_codes],
         category_orders={'exporter_name': country_order},  # Explicitly set the order
         template=get_plotly_template()
     )
