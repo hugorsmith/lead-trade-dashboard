@@ -147,21 +147,18 @@ def load_data():
             df = pd.read_csv('lead_trade_data.csv')
             df['product'] = df['product'].astype(int)
             df['category'] = df['product'].map(HS_TO_CATEGORY)
-            return df
+            country_df = pd.read_csv('countries.csv')
+            return df, country_df
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
         return None
 
-df = load_data()
-if df is None:
+df, country_df = load_data()
+if df is None or country_df is None:
     st.stop()
 
 # Sidebar for filters
 st.sidebar.header("Filters")
-
-# Country selector
-all_countries = sorted(list(set(df['exporter_name'].unique()) | set(df['importer_name'].unique())))
-selected_country = st.sidebar.selectbox('Select a country:', all_countries)
 
 # HS code selector with categories
 st.sidebar.subheader("Select Products:")
@@ -194,6 +191,35 @@ selected_years = st.sidebar.slider(
     value=(min_year, max_year)
 )
 
+# Country selector
+
+region_col, subregion_col, intermediate_col, country_col = st.columns(4)
+with region_col:
+    regions = sorted(country_df.region.drop_duplicates().to_list())
+    region = st.selectbox("Region", regions, index=None)
+
+with subregion_col:
+    subregions = country_df[country_df.subregion.notna()]
+    subregions = subregions.query("region == @region or @region == @region")
+    subregions = sorted(subregions.subregion.drop_duplicates().to_list())
+    subregion = st.selectbox("Sub-region", subregions, index=None)
+
+with intermediate_col:
+    intermediate = country_df[country_df.intermediate_region.notna()]
+    intermediate = intermediate.query("(region == @region or @region == @region) and (subregion == @subregion or @subregion == @subregion)")
+    intermediate = sorted(intermediate.intermediate_region.drop_duplicates().to_list())
+    intermediate_region = st.selectbox("Intermediate Region", intermediate, index=None)
+
+with country_col:
+    countries = country_df[country_df.name.notna()]
+    countries = countries.query("""
+        (region == @region or @region == @region) and \
+        (subregion == @subregion or @subregion == @subregion) and \
+        (intermediate_region == @intermediate_region or @intermediate_region == @intermediate_region)
+    """)
+    countries = sorted(countries.name.drop_duplicates().to_list())
+    country = st.selectbox("Country", countries, index=None)
+
 # Update the data filtering
 df_filtered = df[
     (df['product'].isin(selected_hs_codes)) & 
@@ -201,8 +227,20 @@ df_filtered = df[
 ]
 
 # Create trade flows for selected country
-exports = df_filtered[df_filtered['exporter_name'] == selected_country].copy()
-imports = df_filtered[df_filtered['importer_name'] == selected_country].copy()
+if country:
+    exports = df_filtered[df_filtered.exporter_name == country].copy()
+    imports = df_filtered[df_filtered.importer_name == country].copy()
+else:
+    exports = df_filtered[df_filtered.exporter_name.isin(countries)].copy()
+    imports = df_filtered[df_filtered.importer_name.isin(countries)].copy()
+
+selected_countries = (
+    country if country is not None else
+    intermediate_region if intermediate_region is not None else
+    subregion if subregion is not None else
+    region if region is not None else
+    "All Countries"
+)
 
 # Add key metrics at the top
 st.subheader("Key Metrics (tons)")
@@ -325,7 +363,7 @@ fig0.update_layout(
         size=12
     ),
     title=dict(
-        text=f'Export-Import Imbalance for {selected_country} by Category',
+        text=f'Export-Import Imbalance for {selected_countries} by Category',
         font=dict(
             color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
             size=16
@@ -384,7 +422,7 @@ with tab1:
             size=12
         ),
         title=dict(
-            text=f'Export Volumes for {selected_country} by HS Code',
+            text=f'Export Volumes for {selected_countries} by HS Code',
             font=dict(
                 color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
                 size=16
@@ -469,7 +507,7 @@ with tab1:
             size=12
         ),
         title=dict(
-            text=f'Top Export Destinations for {selected_country} ({selected_year})',
+            text=f'Top Export Destinations for {selected_countries} ({selected_year})',
             font=dict(
                 color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
                 size=16
@@ -527,7 +565,7 @@ with tab2:
             size=12
         ),
         title=dict(
-            text=f'Import Volumes for {selected_country} by HS Code',
+            text=f'Import Volumes for {selected_countries} by HS Code',
             font=dict(
                 color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
                 size=16
@@ -614,7 +652,7 @@ with tab2:
             size=12
         ),
         title=dict(
-            text=f'Top Import Sources for {selected_country} ({selected_year_imports})',
+            text=f'Top Import Sources for {selected_countries} ({selected_year_imports})',
             font=dict(
                 color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
                 size=16
@@ -639,8 +677,11 @@ with tab2:
 # Add after the filters section
 st.sidebar.subheader("Download Data")
 filtered_data = df_filtered[
-    (df_filtered['exporter_name'] == selected_country) |
-    (df_filtered['importer_name'] == selected_country)
+    (df_filtered['exporter_name'] == country) |
+    (df_filtered['importer_name'] == country)
+] if country else df_filtered[
+    (df_filtered['exporter_name'].isin(countries)) |
+    (df_filtered['importer_name'].isin(countries))
 ]
 
 if st.sidebar.button('Download Filtered Data'):
@@ -648,6 +689,6 @@ if st.sidebar.button('Download Filtered Data'):
     st.sidebar.download_button(
         label="Click to Download",
         data=csv,
-        file_name=f"lead_trade_{selected_country}_{selected_years[0]}-{selected_years[1]}.csv",
+        file_name=f"lead_trade_{selected_countries}_{selected_years[0]}-{selected_years[1]}.csv",
         mime='text/csv'
     ) 
