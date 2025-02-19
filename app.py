@@ -64,7 +64,7 @@ st.markdown("""
 # Create a container div for text and both links
 st.markdown("""
     <div>
-        Based on global lead metal trade data from 2012-2022.
+        Based on global lead metal trade data from 2012-2023. Trade data is reconciled per CEPII's BACI database.
         Select a country and HS codes to explore trade patterns by weight (tons).
     </div>
     <br>
