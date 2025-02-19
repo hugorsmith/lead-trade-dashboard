@@ -64,7 +64,7 @@ st.markdown("""
 # Create a container div for text and both links
 st.markdown("""
     <div>
-        Based on global lead metal trade data from 2012-2023. Trade data is reconciled per CEPII's BACI database.
+        Based on global lead metal trade data from 2012-2023.
         Select a country and HS codes to explore trade patterns by weight (tons).
     </div>
     <br>
@@ -94,26 +94,67 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# Define custom colors for both HS codes and categories
-CUSTOM_COLORS = {
-    # New Lead
-    260700: '#27272a',  # Dark grey
-    780110: '#71717a',  # Lighter grey
-    780191: '#a1a1aa',  # Lighter grey (other unwrought lead)
-    780199: '#d4d4d8',  # Lighter grey (other refined lead)
-    # New Batteries
-    850710: '#22c55e',  # Green
-    850720: '#4ade80',  # Lighter green
-    # Used Batteries & Scrap
-    854810: '#fdba74',   # Orange-300
-    780200: '#f97316',  # Orange-500 
+# Define the HS codes and their categories at the top level (before any color definitions)
+HS_CODE_CATEGORIES = {
+    'Ores & Concentrates': [
+        ('260700', 'Lead ores and concentrates')
+    ],
+    'New Lead': [
+        ('780110', 'Refined lead - unwrought'),
+        ('780191', 'Other unwrought lead'),
+        ('780199', 'Other refined lead')
+    ],
+    'New Batteries': [
+        ('850710', 'New lead-acid batteries for starting engines'),
+        ('850720', 'Other new lead-acid batteries')
+    ],
+    'Used Batteries & Scrap': [
+        ('854810', 'Waste batteries'),
+        ('780200', 'Lead waste and scrap')
+    ]
 }
 
+# Add color definitions after HS_CODE_CATEGORIES
 CATEGORY_COLORS = {
-    'New Lead': '#52525b',        # Grey
-    'New Batteries': '#16a34a',    # Green
-    'Used Batteries & Scrap': '#ea580c'  # Orange
+    'Ores & Concentrates': {
+        'base': '#8c6675',  # Sienna brown
+        'codes': {
+            '260700': '#8c6675'  # Same as base since only one code
+        }
+    },
+    'New Lead': {
+        'base': '#52525b',  # Base gray
+        'codes': {
+            '780110': '#71717a',  # Darker gray
+            '780191': '#a1a1aa',  # Base gray
+            '780199': '#d4d4d8'   # Lighter gray
+        }
+    },
+    'New Batteries': {
+        'base': '#16a34a',  # Forest green
+        'codes': {
+            '850710': '#22c55e',  # Darker green
+            '850720': '#4ade80'   # Lighter green
+        }
+    },
+    'Used Batteries & Scrap': {
+        'base': '#ea580c',  # Bright orange
+        'codes': {
+            '854810': '#fdba74',  # Darker orange
+            '780200': '#f97316'   # Lighter orange
+        }
+    }
 }
+
+# Create a flat mapping of HS codes to colors for easy lookup
+HS_CODE_COLORS = {
+    hs_code: category_data['codes'][hs_code]
+    for category, category_data in CATEGORY_COLORS.items()
+    for hs_code in category_data['codes']
+}
+
+# Create a list of category colors in the same order as categories
+CATEGORY_COLOR_LIST = [CATEGORY_COLORS[cat]['base'] for cat in HS_CODE_CATEGORIES.keys()]
 
 # Create theme-aware plotly template
 def get_plotly_template():
@@ -123,42 +164,11 @@ def get_plotly_template():
     else:
         return 'plotly_dark'  # Use built-in dark theme
 
-# Define the HS codes and their categories at the top level (before any functions)
-HS_CODE_CATEGORIES = {
-    'New Lead': [
-        (260700, 'Lead ores and concentrates'),
-        (780110, 'Refined lead - unwrought'),
-        (780191, 'Other unwrought lead'),
-        (780199, 'Other refined lead')
-    ],
-    'New Batteries': [
-        (850710, 'New lead-acid batteries for starting engines'),
-        (850720, 'Other new lead-acid batteries')
-    ],
-    'Used Batteries & Scrap': [
-        (854810, 'Waste batteries'),
-        (780200, 'Lead waste and scrap')
-    ]
-}
-
-# Create labels for the HS codes
-hs_code_labels = {
-    code: f"{code} - {desc}"
-    for category, products in HS_CODE_CATEGORIES.items()
-    for code, desc in products
-}
-
 # Create a mapping dictionary for the category assignment
 HS_TO_CATEGORY = {
     hs_code: category
     for category, products in HS_CODE_CATEGORIES.items()
     for hs_code, _ in products
-}
-
-# Create a mapping from product labels to colors
-HS_LABEL_COLORS = {
-    hs_code_labels[code]: color
-    for code, color in CUSTOM_COLORS.items()
 }
 
 # Load the data
@@ -167,7 +177,8 @@ def load_trade_data():
     try:
         with st.spinner('Loading trade data...'):
             df = pd.read_csv('lead_trade_data.csv')
-            df['product'] = df['product'].astype(int)
+            # Convert product codes to strings with leading zeros preserved
+            df['product'] = df['product'].astype(str).str.zfill(6)
             df['category'] = df['product'].map(HS_TO_CATEGORY)
             return df
     except Exception as e:
@@ -329,49 +340,79 @@ with metrics_col4:
     num_partners = len(set(exports_year['importer_name'].unique()) | set(imports_year['exporter_name'].unique()))
     st.metric("Trading Partners", f"{num_partners}")
 
-# Update the yearly exports/imports data preparation
+# Create labels for the HS codes
+hs_code_labels = {
+    code: f"{code} - {desc}"
+    for category, products in HS_CODE_CATEGORIES.items()
+    for code, desc in products
+}
+
 yearly_exports = (
     exports.groupby(['year', 'category', 'product'])['quantity']
     .sum()
     .reset_index()
-    .assign(product_label=lambda x: x['product'].map(hs_code_labels))
+    .assign(
+        product_label = lambda x: x['product'].map(hs_code_labels),
+        order = lambda x: x['product'].map({c: i for i, c in enumerate(HS_TO_CATEGORY.keys())})
+    )
+    .sort_values(['order'])
 )
 
 yearly_imports = (
     imports.groupby(['year', 'category', 'product'])['quantity']
     .sum()
     .reset_index()
-    .assign(product_label=lambda x: x['product'].map(hs_code_labels))
+    .assign(
+        product_label = lambda x: x['product'].map(hs_code_labels),
+        order = lambda x: x['product'].map({c: i for i, c in enumerate(HS_TO_CATEGORY.keys())})
+    )
+    .sort_values(['order'])
 )
 
 # Show trade imbalance
-yearly_imports_exports = (
+yearly_trades = (
     pd.concat([
-        yearly_imports.assign(trade_direction = "Imports"),
-        yearly_exports.assign(trade_direction = "Exports")
+        yearly_imports.assign(direction = "imports"),
+        yearly_exports.assign(direction = "exports")
     ])
-    .groupby(['year','category','trade_direction'])['quantity']
+    .groupby(['year', 'category', 'direction'])['quantity']
     .sum()
     .reset_index()
-    .pivot(index=['year','category'], columns='trade_direction', values='quantity')
+    .pivot(index=['year','category'], columns='direction', values='quantity')
     .reset_index()
     .fillna(0)
-    .assign(imbalance = lambda x: x.Exports - x.Imports)
 )
 
-fig0 = px.bar(
-    yearly_imports_exports,
-    x='year',
-    y='imbalance',
-    color='category',
-    barmode='relative',
-    labels={
-        'imbalance': 'Exports - Imports (tons)',
-        'year': 'Year',
-        'category': 'Category'
-    },
-    color_discrete_map=CATEGORY_COLORS,  # Use category colors instead of HS code colors
+from plotly.subplots import make_subplots
+
+fig0 = make_subplots(
+    rows=2, cols=1,
+    # shared_xaxes=True,
+    vertical_spacing=0.15,
+    subplot_titles=("", ""),
+    row_heights=[0.5, 0.5]
 )
+
+for category in yearly_trades['category'].unique():
+    cat_df = yearly_trades.query("category == @category")
+    fig0.add_trace(go.Bar(
+        x=cat_df['year'],
+        y=cat_df['exports'],
+        marker_color=cat_df['category'].map({k: v['base'] for k, v in CATEGORY_COLORS.items()}),
+        name=category,
+    ), row=1, col=1)
+
+for category in yearly_trades['category'].unique():
+    cat_df = yearly_trades.query("category == @category")
+    fig0.add_trace(go.Bar(
+        x=cat_df['year'],
+        y=cat_df['imports'],
+        name=category,
+        marker_color=cat_df['category'].map({k: v['base'] for k, v in CATEGORY_COLORS.items()}),
+        showlegend=False,
+    ), row=2, col=1)
+
+years = yearly_trades['year'].unique()
 
 # Customize the layout
 fig0.update_layout(
@@ -380,7 +421,7 @@ fig0.update_layout(
     legend=dict(
         title="",
         orientation="h",
-        y=1.05,
+        y=1.1,
         x=0
     ),
     # Only apply custom colors in dark mode
@@ -389,7 +430,7 @@ fig0.update_layout(
         size=12
     ),
     title=dict(
-        text=f'Export-Import Imbalance for {selected_countries} by Category',
+        text=f'Exports and Imports for {selected_countries} by Category',
         font=dict(
             color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
             size=16
@@ -397,12 +438,36 @@ fig0.update_layout(
     ),
     xaxis=dict(
         gridcolor='rgba(128,128,128,0.1)', 
-        linecolor='rgba(128,128,128,0.2)'
+        linecolor='rgba(128,128,128,0.2)',
+        title="",
+        tickvals=years,
+        ticktext=years.astype(str),
+        domain=[0,1]
+    ),
+    xaxis2=dict(
+        gridcolor='rgba(128,128,128,0.1)', 
+        linecolor='rgba(128,128,128,0.2)',
+        title="",
+        tickvals=years,
+        ticktext=years.astype(str),
+        domain=[0,1],
+        showticklabels=False
     ),
     yaxis=dict(
         gridcolor='rgba(128,128,128,0.1)', 
-        linecolor='rgba(128,128,128,0.2)'
+        linecolor='rgba(128,128,128,0.2)',
+        title="Exports (tons)",
+        # zeroline=True,  # Added: more visible zero line
+        # zerolinewidth=2  # Added: thicker zero line
     ),
+    yaxis2=dict(
+        gridcolor='rgba(128,128,128,0.1)', 
+        linecolor='rgba(128,128,128,0.2)',
+        title="Imports (tons)",
+        range=[yearly_trades.groupby(['year'])['imports'].sum().reset_index().imports.max(), 0]
+    ),
+    barmode="stack",
+    template=get_plotly_template(),
     margin=dict(b=120, l=50, r=50, t=50),
     height=400
 )
@@ -427,7 +492,7 @@ with tab1:
             'product_label': 'HS Code'
         },
         barmode='stack',
-        color_discrete_map=HS_LABEL_COLORS,  # Use the label mapping instead of sequence
+        color_discrete_sequence=[HS_CODE_COLORS[code] for code in selected_hs_codes],
         template=get_plotly_template()
     )
     # Customize the layout
@@ -496,9 +561,11 @@ with tab1:
         .groupby(['year','product','importer_name'])['quantity']
         .sum()
         .reset_index()
-        .assign(product_label=lambda x: x['product'].map(hs_code_labels))
-        .copy()
+        .copy()  # Create a copy to avoid SettingWithCopyWarning
     )
+    
+    # Add HS code labels
+    top_exports['product_label'] = top_exports['product'].map(hs_code_labels)
     
     # Sort the countries by their total volume
     country_order = country_totals.index.tolist()
@@ -513,8 +580,8 @@ with tab1:
             'importer_name': 'Importing Country',
             'product_label': 'HS Code'
         },
-        color_discrete_map=HS_LABEL_COLORS,  # Use the label mapping
-        category_orders={'importer_name': country_order},
+        color_discrete_sequence=[HS_CODE_COLORS[code] for code in selected_hs_codes],
+        category_orders={'importer_name': country_order},  # Explicitly set the order
         template=get_plotly_template()
     )
     fig2.update_layout(
@@ -572,7 +639,7 @@ with tab2:
             'product_label': 'HS Code'
         },
         barmode='stack',
-        color_discrete_map=HS_LABEL_COLORS,  # Use the label mapping
+        color_discrete_sequence=[HS_CODE_COLORS[code] for code in selected_hs_codes],
         template=get_plotly_template()
     )
     fig3.update_layout(
@@ -641,9 +708,11 @@ with tab2:
         .groupby(['year','product','exporter_name'])['quantity']
         .sum()
         .reset_index()
-        .assign(product_label=lambda x: x['product'].map(hs_code_labels))
         .copy()
     )
+    
+    # Add HS code labels
+    top_imports['product_label'] = top_imports['product'].map(hs_code_labels)
     
     # Sort the countries by their total volume
     country_order = country_totals.index.tolist()
@@ -658,8 +727,8 @@ with tab2:
             'exporter_name': 'Exporting Country',
             'product_label': 'HS Code'
         },
-        color_discrete_map=HS_LABEL_COLORS,  # Use the label mapping
-        category_orders={'exporter_name': country_order},
+        color_discrete_sequence=[HS_CODE_COLORS[code] for code in selected_hs_codes],
+        category_orders={'exporter_name': country_order},  # Explicitly set the order
         template=get_plotly_template()
     )
     
