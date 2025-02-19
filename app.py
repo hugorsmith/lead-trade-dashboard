@@ -362,33 +362,48 @@ yearly_imports = (
 )
 
 # Show trade imbalance
-yearly_imports_exports = (
-    pd.concat([
-        yearly_imports.assign(trade_direction = "Imports"),
-        yearly_exports.assign(trade_direction = "Exports")
-    ])
-    .groupby(['year','category','trade_direction'])['quantity']
+yearly_imports_cat = (
+    yearly_imports
+    .groupby(['year', 'category'])
     .sum()
     .reset_index()
-    .pivot(index=['year','category'], columns='trade_direction', values='quantity')
-    .reset_index()
-    .fillna(0)
-    .assign(imbalance = lambda x: x.Exports - x.Imports)
 )
 
-fig0 = px.bar(
-    yearly_imports_exports,
-    x='year',
-    y='imbalance',
-    color='category',
-    barmode='relative',
-    labels={
-        'imbalance': 'Exports - Imports (tons)',
-        'year': 'Year',
-        'category': 'Category'
-    },
-    color_discrete_sequence=CATEGORY_COLOR_LIST,
+yearly_exports_cat = (
+    yearly_exports
+    .groupby(['year', 'category'])
+    .sum()
+    .reset_index()
 )
+
+from plotly.subplots import make_subplots
+
+fig0 = make_subplots(
+    rows=2, cols=1,
+    # shared_xaxes=True,
+    vertical_spacing=0.15,
+    subplot_titles=("", ""),
+    row_heights=[0.5, 0.5]
+)
+
+for category in yearly_exports_cat['category'].unique():
+    cat_df = yearly_exports_cat.query("category == @category")
+    fig0.add_trace(go.Bar(
+        x=cat_df['year'],
+        y=cat_df['quantity'],
+        marker_color=cat_df['category'].map({k: v['base'] for k, v in CATEGORY_COLORS.items()}),
+        name=category,
+    ), row=1, col=1,)
+
+for category in yearly_imports_cat['category'].unique():
+    cat_df = yearly_imports_cat.query("category == @category")
+    fig0.add_trace(go.Bar(
+        x=cat_df['year'],
+        y=cat_df['quantity'],
+        name=category,
+        marker_color=cat_df['category'].map({k: v['base'] for k, v in CATEGORY_COLORS.items()}),
+        showlegend=False,
+    ), row=2, col=1,)
 
 # Customize the layout
 fig0.update_layout(
@@ -397,7 +412,7 @@ fig0.update_layout(
     legend=dict(
         title="",
         orientation="h",
-        y=1.05,
+        y=1.1,
         x=0
     ),
     # Only apply custom colors in dark mode
@@ -414,14 +429,35 @@ fig0.update_layout(
     ),
     xaxis=dict(
         gridcolor='rgba(128,128,128,0.1)', 
-        linecolor='rgba(128,128,128,0.2)'
+        linecolor='rgba(128,128,128,0.2)',
+        title="",
+        tickvals=yearly_exports_cat['year'].unique(),
+        ticktext=yearly_exports_cat['year'].astype(str).unique(),
+        domain=[0,1]
+    ),
+    xaxis2=dict(
+        gridcolor='rgba(128,128,128,0.1)', 
+        linecolor='rgba(128,128,128,0.2)',
+        title="",
+        tickvals=cat_df['year'].unique(),
+        ticktext=cat_df['year'].astype(str).unique(),
+        domain=[0,1],
+        showticklabels=False
     ),
     yaxis=dict(
         gridcolor='rgba(128,128,128,0.1)', 
         linecolor='rgba(128,128,128,0.2)',
-        zeroline=True,  # Added: more visible zero line
-        zerolinewidth=2  # Added: thicker zero line
+        title="Exports (tons)",
+        # zeroline=True,  # Added: more visible zero line
+        # zerolinewidth=2  # Added: thicker zero line
     ),
+    yaxis2=dict(
+        gridcolor='rgba(128,128,128,0.1)', 
+        linecolor='rgba(128,128,128,0.2)',
+        title="Imports (tons)",
+        range=[yearly_imports_cat.groupby(['year'])['quantity'].sum().reset_index().quantity.max(), 0]
+    ),
+    barmode="stack",
     margin=dict(b=120, l=50, r=50, t=50),
     height=400
 )
