@@ -11,6 +11,18 @@ st.set_page_config(
     layout="wide"
 )
 
+# Add after the imports but before the page configuration
+PRODUCT_DEFINITIONS = {
+    '260700': "Lead ores and concentrates - Raw materials extracted from mines.",
+    '780110': "Refined lead (unwrought) - Pure lead metal (99.9%+) that hasn't been worked into products. Main input for battery manufacturing.",
+    '780191': "Other unwrought lead - Refers to unwrought lead (e.g., in ingots or blocks) that is not classified as refined and contains antimony as the principal alloying element by weight.",
+    '780199': "Other refined lead - Unwrought refined lead metal not elsewhere specified.",
+    '850710': "Lead-acid batteries for starting engines - New car batteries and other starting/lighting/ignition batteries.",
+    '850720': "Other lead-acid batteries - New non-SLI batteries, including for backup power and electric vehicles.",
+    '854810': "Waste batteries - Used lead-acid batteries.",
+    '780200': "Lead waste and scrap - Various non-battery forms of lead metal waste."
+}
+
 # Title and description
 st.title("Global Lead Trade Analysis Dashboard")
 st.markdown("""
@@ -61,12 +73,15 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
+# Add after the title and before the CSS styling
+st.markdown("""
+    Based on global lead metal trade data from 2012-2023.
+    Select a country and HS codes to explore trade patterns by weight (tons).
+    Data is reconciled per CEPII's BACI dataset. 
+""")
+
 # Create a container div for text and both links
 st.markdown("""
-    <div>
-        Based on global lead metal trade data from 2012-2023.
-        Select a country and HS codes to explore trade patterns by weight (tons).
-    </div>
     <br>
     <div style='display: flex; gap: 20px; align-items: center; margin-bottom: 20px;'>
         <a href='https://leadbatteries.substack.com/' target='_blank'>
@@ -90,6 +105,13 @@ st.markdown("""
             font-size: 0.9rem;
         '>
             🔗 Data Source
+        </a>
+        <a href='#product-definitions' style='
+            color: #4A90E2;
+            text-decoration: none;
+            font-size: 0.9rem;
+        '>
+            ⬇️ View Product Code Descriptions
         </a>
     </div>
 """, unsafe_allow_html=True)
@@ -788,4 +810,14 @@ if st.sidebar.button('Download Filtered Data'):
         data=csv,
         file_name=f"lead_trade_{selected_countries}_{selected_years[0]}-{selected_years[1]}.csv",
         mime='text/csv'
-    ) 
+    )
+
+# Add at the very bottom of the file, after all other content
+st.markdown("---")
+st.markdown("<h2 id='product-definitions'>Product Definitions</h2>", unsafe_allow_html=True)
+st.markdown("Our analysis is based on [Harmonized System (HS) codes](https://www.wcotradetools.org/en/harmonized-system), which are a global standard for classifying traded goods.")
+
+for category, products in HS_CODE_CATEGORIES.items():
+    st.markdown(f"### {category}")
+    for hs_code, name in products:
+        st.markdown(f"**{hs_code} - {name}**  \n{PRODUCT_DEFINITIONS[hs_code]}") 
