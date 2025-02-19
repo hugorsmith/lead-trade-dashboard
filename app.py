@@ -117,31 +117,31 @@ HS_CODE_CATEGORIES = {
 # Add color definitions after HS_CODE_CATEGORIES
 CATEGORY_COLORS = {
     'Ores & Concentrates': {
-        'base': '#A0522D',  # Sienna brown
+        'base': '#8c6675',  # Sienna brown
         'codes': {
-            '260700': '#A0522D'  # Same as base since only one code
+            '260700': '#8c6675'  # Same as base since only one code
         }
     },
     'New Lead': {
-        'base': '#8C8C8C',  # Base gray
+        'base': '#4F4F4F',  # Base gray
         'codes': {
-            '780110': '#707070',  # Darker gray
-            '780191': '#8C8C8C',  # Base gray
+            '780110': '#4F4F4F',  # Darker gray
+            '780191': '#757575',  # Base gray
             '780199': '#A5A5A5'   # Lighter gray
         }
     },
     'New Batteries': {
-        'base': '#228B22',  # Forest green
+        'base': '#ffe000',  # Forest green
         'codes': {
-            '850710': '#1B6B1B',  # Darker green
-            '850720': '#3DA23D'   # Lighter green
+            '850710': '#ffe000',  # Darker green
+            '850720': '#fff085'   # Lighter green
         }
     },
     'Used Batteries & Scrap': {
-        'base': '#FF7F00',  # Bright orange
+        'base': '#eb7f00',  # Bright orange
         'codes': {
-            '854810': '#E66E00',  # Darker orange
-            '780200': '#FF9933'   # Lighter orange
+            '854810': '#eb7f00',  # Darker orange
+            '780200': '#ffbc6d'   # Lighter orange
         }
     }
 }
@@ -351,29 +351,36 @@ yearly_exports = (
     exports.groupby(['year', 'category', 'product'])['quantity']
     .sum()
     .reset_index()
-    .assign(product_label = lambda x: x['product'].map(hs_code_labels))
+    .assign(
+        product_label = lambda x: x['product'].map(hs_code_labels),
+        order = lambda x: x['product'].map({c: i for i, c in enumerate(HS_TO_CATEGORY.keys())})
+    )
+    .sort_values(['order'])
 )
 
 yearly_imports = (
     imports.groupby(['year', 'category', 'product'])['quantity']
     .sum()
     .reset_index()
-    .assign(product_label = lambda x: x['product'].map(hs_code_labels))
+    .assign(
+        product_label = lambda x: x['product'].map(hs_code_labels),
+        order = lambda x: x['product'].map({c: i for i, c in enumerate(HS_TO_CATEGORY.keys())})
+    )
+    .sort_values(['order'])
 )
 
 # Show trade imbalance
-yearly_imports_cat = (
-    yearly_imports
-    .groupby(['year', 'category'])
+yearly_trades = (
+    pd.concat([
+        yearly_imports.assign(direction = "imports"),
+        yearly_exports.assign(direction = "exports")
+    ])
+    .groupby(['year', 'category', 'direction'])['quantity']
     .sum()
     .reset_index()
-)
-
-yearly_exports_cat = (
-    yearly_exports
-    .groupby(['year', 'category'])
-    .sum()
+    .pivot(index=['year','category'], columns='direction', values='quantity')
     .reset_index()
+    .fillna(0)
 )
 
 from plotly.subplots import make_subplots
@@ -386,24 +393,26 @@ fig0 = make_subplots(
     row_heights=[0.5, 0.5]
 )
 
-for category in yearly_exports_cat['category'].unique():
-    cat_df = yearly_exports_cat.query("category == @category")
+for category in yearly_trades['category'].unique():
+    cat_df = yearly_trades.query("category == @category")
     fig0.add_trace(go.Bar(
         x=cat_df['year'],
-        y=cat_df['quantity'],
+        y=cat_df['exports'],
         marker_color=cat_df['category'].map({k: v['base'] for k, v in CATEGORY_COLORS.items()}),
         name=category,
-    ), row=1, col=1,)
+    ), row=1, col=1)
 
-for category in yearly_imports_cat['category'].unique():
-    cat_df = yearly_imports_cat.query("category == @category")
+for category in yearly_trades['category'].unique():
+    cat_df = yearly_trades.query("category == @category")
     fig0.add_trace(go.Bar(
         x=cat_df['year'],
-        y=cat_df['quantity'],
+        y=cat_df['imports'],
         name=category,
         marker_color=cat_df['category'].map({k: v['base'] for k, v in CATEGORY_COLORS.items()}),
         showlegend=False,
-    ), row=2, col=1,)
+    ), row=2, col=1)
+
+years = yearly_trades['year'].unique()
 
 # Customize the layout
 fig0.update_layout(
@@ -431,16 +440,16 @@ fig0.update_layout(
         gridcolor='rgba(128,128,128,0.1)', 
         linecolor='rgba(128,128,128,0.2)',
         title="",
-        tickvals=yearly_exports_cat['year'].unique(),
-        ticktext=yearly_exports_cat['year'].astype(str).unique(),
+        tickvals=years,
+        ticktext=years.astype(str),
         domain=[0,1]
     ),
     xaxis2=dict(
         gridcolor='rgba(128,128,128,0.1)', 
         linecolor='rgba(128,128,128,0.2)',
         title="",
-        tickvals=cat_df['year'].unique(),
-        ticktext=cat_df['year'].astype(str).unique(),
+        tickvals=years,
+        ticktext=years.astype(str),
         domain=[0,1],
         showticklabels=False
     ),
@@ -455,9 +464,10 @@ fig0.update_layout(
         gridcolor='rgba(128,128,128,0.1)', 
         linecolor='rgba(128,128,128,0.2)',
         title="Imports (tons)",
-        range=[yearly_imports_cat.groupby(['year'])['quantity'].sum().reset_index().quantity.max(), 0]
+        range=[yearly_trades.groupby(['year'])['imports'].sum().reset_index().imports.max(), 0]
     ),
     barmode="stack",
+    template=get_plotly_template(),
     margin=dict(b=120, l=50, r=50, t=50),
     height=400
 )
