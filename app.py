@@ -653,7 +653,7 @@ with tab2:
             xanchor="center",
             x=0.5
         ),
-        # Only apply custom colors in dark mode
+        # Only apply custom colors in dark modes
         font=dict(
             color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
             size=12
