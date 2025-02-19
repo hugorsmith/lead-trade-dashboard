@@ -430,7 +430,7 @@ fig0.update_layout(
         size=12
     ),
     title=dict(
-        text=f'Export-Import Imbalance for {selected_countries} by Category',
+        text=f'Exports and Imports for {selected_countries} by Category',
         font=dict(
             color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
             size=16
