@@ -11,6 +11,18 @@ st.set_page_config(
     layout="wide"
 )
 
+# Add after the imports but before the page configuration
+PRODUCT_DEFINITIONS = {
+    '260700': "Lead ores and concentrates - Raw materials extracted from mines.",
+    '780110': "Refined lead (unwrought) - Pure lead metal (99.9%+) that hasn't been worked into products. Main input for battery manufacturing.",
+    '780191': "Other unwrought lead - Refers to unwrought lead (e.g., in ingots or blocks) that is not classified as refined and contains antimony as the principal alloying element by weight.",
+    '780199': "Other refined lead - Unwrought refined lead metal not elsewhere specified.",
+    '850710': "Lead-acid batteries for starting engines - New car batteries and other starting/lighting/ignition batteries.",
+    '850720': "Other lead-acid batteries - New non-SLI batteries, including for backup power and electric vehicles.",
+    '854810': "Waste batteries - Used lead-acid batteries.",
+    '780200': "Lead waste and scrap - Various non-battery forms of lead metal waste."
+}
+
 # Title and description
 st.title("Global Lead Trade Analysis Dashboard")
 st.markdown("""
@@ -61,14 +73,17 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
+# Add after the title and before the CSS styling
 st.markdown("""
-    This dashboard provides interactive visualizations of global lead metal trade data from 2012-2023.
+    Based on global lead metal trade data from 2012-2023.
     Select a country and HS codes to explore trade patterns by weight (tons).
+    Data is reconciled per CEPII's BACI dataset. 
 """)
 
-# Create a container div for both links
+# Create a container div for text and both links
 st.markdown("""
-    <div style='display: flex; gap: 12px; align-items: center; margin-bottom: 20px;'>
+    <br>
+    <div style='display: flex; gap: 20px; align-items: center; margin-bottom: 20px;'>
         <a href='https://leadbatteries.substack.com/' target='_blank'>
             <button style='
                 background-color: #FF4B4B;
@@ -91,20 +106,77 @@ st.markdown("""
         '>
             🔗 Data Source
         </a>
+        <a href='#product-definitions' style='
+            color: #4A90E2;
+            text-decoration: none;
+            font-size: 0.9rem;
+        '>
+            ⬇️ View Product Code Descriptions
+        </a>
     </div>
 """, unsafe_allow_html=True)
 
-# Add this color palette definition after the HS_CODE_CATEGORIES definition
-CUSTOM_COLORS = [
-    '#00C805',  # Bright green
-    '#0FDDAF',  # Teal
-    '#2B95FF',  # Bright blue
-    '#665AFF',  # Purple
-    '#FF5AE5',  # Pink
-    '#FF5A8F',  # Rose
-    '#FF7445',  # Orange
-    '#FFB000',  # Gold
-]
+# Define the HS codes and their categories at the top level (before any color definitions)
+HS_CODE_CATEGORIES = {
+    'Ores & Concentrates': [
+        ('260700', 'Lead ores and concentrates')
+    ],
+    'New Lead': [
+        ('780110', 'Refined lead - unwrought'),
+        ('780191', 'Other unwrought lead'),
+        ('780199', 'Other refined lead')
+    ],
+    'New Batteries': [
+        ('850710', 'New lead-acid batteries for starting engines'),
+        ('850720', 'Other new lead-acid batteries')
+    ],
+    'Used Batteries & Scrap': [
+        ('854810', 'Waste batteries'),
+        ('780200', 'Lead waste and scrap')
+    ]
+}
+
+# Add color definitions after HS_CODE_CATEGORIES
+CATEGORY_COLORS = {
+    'Ores & Concentrates': {
+        'base': '#8c6675',  # Sienna brown
+        'codes': {
+            '260700': '#8c6675'  # Same as base since only one code
+        }
+    },
+    'New Lead': {
+        'base': '#52525b',  # Base gray
+        'codes': {
+            '780110': '#71717a',  # Darker gray
+            '780191': '#a1a1aa',  # Base gray
+            '780199': '#d4d4d8'   # Lighter gray
+        }
+    },
+    'New Batteries': {
+        'base': '#16a34a',  # Forest green
+        'codes': {
+            '850710': '#22c55e',  # Darker green
+            '850720': '#4ade80'   # Lighter green
+        }
+    },
+    'Used Batteries & Scrap': {
+        'base': '#ea580c',  # Bright orange
+        'codes': {
+            '854810': '#fdba74',  # Darker orange
+            '780200': '#f97316'   # Lighter orange
+        }
+    }
+}
+
+# Create a flat mapping of HS codes to colors for easy lookup
+HS_CODE_COLORS = {
+    hs_code: category_data['codes'][hs_code]
+    for category, category_data in CATEGORY_COLORS.items()
+    for hs_code in category_data['codes']
+}
+
+# Create a list of category colors in the same order as categories
+CATEGORY_COLOR_LIST = [CATEGORY_COLORS[cat]['base'] for cat in HS_CODE_CATEGORIES.keys()]
 
 # Create theme-aware plotly template
 def get_plotly_template():
@@ -113,24 +185,6 @@ def get_plotly_template():
         return 'plotly'  # Use default light theme
     else:
         return 'plotly_dark'  # Use built-in dark theme
-
-# Define the HS codes and their categories at the top level (before any functions)
-HS_CODE_CATEGORIES = {
-    'New Lead': [
-        (260700, 'Lead ores and concentrates'),
-        (780110, 'Refined lead - unwrought'),
-        (780191, 'Other unwrought lead'),
-        (780199, 'Other refined lead')
-    ],
-    'New Batteries': [
-        (850710, 'New lead-acid batteries for starting engines'),
-        (850720, 'Other new lead-acid batteries')
-    ],
-    'Used Batteries & Scrap': [
-        (854810, 'Waste batteries'),
-        (780200, 'Lead waste and scrap')
-    ]
-}
 
 # Create a mapping dictionary for the category assignment
 HS_TO_CATEGORY = {
@@ -141,27 +195,35 @@ HS_TO_CATEGORY = {
 
 # Load the data
 @st.cache_data
-def load_data():
+def load_trade_data():
     try:
         with st.spinner('Loading trade data...'):
             df = pd.read_csv('lead_trade_data.csv')
-            df['product'] = df['product'].astype(int)
+            # Convert product codes to strings with leading zeros preserved
+            df['product'] = df['product'].astype(str).str.zfill(6)
             df['category'] = df['product'].map(HS_TO_CATEGORY)
             return df
     except Exception as e:
-        st.error(f"Error loading data: {str(e)}")
+        st.error(f"Error loading trade data: {str(e)}")
         return None
+    
+@st.cache_data
+def load_country_data():
+    try:
+        with st.spinner('Loading trade data...'):
+            country_df = pd.read_csv('countries.csv')
+            return country_df
+    except Exception as e:
+        st.error(f"Error loading country data: {str(e)}")
+        return None, None
 
-df = load_data()
-if df is None:
+df = load_trade_data()
+country_df = load_country_data()
+if df is None or country_df is None:
     st.stop()
 
 # Sidebar for filters
 st.sidebar.header("Filters")
-
-# Country selector
-all_countries = sorted(list(set(df['exporter_name'].unique()) | set(df['importer_name'].unique())))
-selected_country = st.sidebar.selectbox('Select a country:', all_countries)
 
 # HS code selector with categories
 st.sidebar.subheader("Select Products:")
@@ -194,6 +256,35 @@ selected_years = st.sidebar.slider(
     value=(min_year, max_year)
 )
 
+# Country selector
+
+region_col, subregion_col, intermediate_col, country_col = st.columns(4)
+with region_col:
+    regions = sorted(country_df.region.drop_duplicates().to_list())
+    region = st.selectbox("Region", regions, index=None)
+
+with subregion_col:
+    subregions = country_df[country_df.subregion.notna()]
+    subregions = subregions.query("region == @region or @region == @region")
+    subregions = sorted(subregions.subregion.drop_duplicates().to_list())
+    subregion = st.selectbox("Sub-region", subregions, index=None)
+
+with intermediate_col:
+    intermediate = country_df[country_df.intermediate_region.notna()]
+    intermediate = intermediate.query("(region == @region or @region == @region) and (subregion == @subregion or @subregion == @subregion)")
+    intermediate = sorted(intermediate.intermediate_region.drop_duplicates().to_list())
+    intermediate_region = st.selectbox("Intermediate Region", intermediate, index=None)
+
+with country_col:
+    countries = country_df[country_df.name.notna()]
+    countries = countries.query("""
+        (region == @region or @region == @region) and \
+        (subregion == @subregion or @subregion == @subregion) and \
+        (intermediate_region == @intermediate_region or @intermediate_region == @intermediate_region)
+    """)
+    countries = sorted(countries.name.drop_duplicates().to_list())
+    country = st.selectbox("Country", countries, index=None)
+
 # Update the data filtering
 df_filtered = df[
     (df['product'].isin(selected_hs_codes)) & 
@@ -201,20 +292,27 @@ df_filtered = df[
 ]
 
 # Create trade flows for selected country
-exports = df_filtered[df_filtered['exporter_name'] == selected_country].copy()
-imports = df_filtered[df_filtered['importer_name'] == selected_country].copy()
+if country:
+    exports = df_filtered[df_filtered.exporter_name == country].copy()
+    imports = df_filtered[df_filtered.importer_name == country].copy()
+else:
+    exports = df_filtered[df_filtered.exporter_name.isin(countries)].copy()
+    imports = df_filtered[df_filtered.importer_name.isin(countries)].copy()
+
+selected_countries = (
+    country if country is not None else
+    intermediate_region if intermediate_region is not None else
+    subregion if subregion is not None else
+    region if region is not None else
+    "All Countries"
+)
 
 # Add key metrics at the top
 st.subheader("Key Metrics (tons)")
 
 # Add year selector for metrics
 available_years = sorted(df_filtered['year'].unique(), reverse=True)  # Sort in descending order
-selected_metrics_year = st.selectbox(
-    'Select Year for Metrics',
-    available_years,
-    index=0,  # Default to first (most recent) year
-    key='metrics_year_selector'
-)
+selected_metrics_year = df_filtered.year.max()
 
 # Filter data for selected year
 exports_year = exports[exports['year'] == selected_metrics_year]
@@ -264,6 +362,140 @@ with metrics_col4:
     num_partners = len(set(exports_year['importer_name'].unique()) | set(imports_year['exporter_name'].unique()))
     st.metric("Trading Partners", f"{num_partners}")
 
+# Create labels for the HS codes
+hs_code_labels = {
+    code: f"{code} - {desc}"
+    for category, products in HS_CODE_CATEGORIES.items()
+    for code, desc in products
+}
+
+yearly_exports = (
+    exports.groupby(['year', 'category', 'product'])['quantity']
+    .sum()
+    .reset_index()
+    .assign(
+        product_label = lambda x: x['product'].map(hs_code_labels),
+        order = lambda x: x['product'].map({c: i for i, c in enumerate(HS_TO_CATEGORY.keys())})
+    )
+    .sort_values(['order'])
+)
+
+yearly_imports = (
+    imports.groupby(['year', 'category', 'product'])['quantity']
+    .sum()
+    .reset_index()
+    .assign(
+        product_label = lambda x: x['product'].map(hs_code_labels),
+        order = lambda x: x['product'].map({c: i for i, c in enumerate(HS_TO_CATEGORY.keys())})
+    )
+    .sort_values(['order'])
+)
+
+# Show trade imbalance
+yearly_trades = (
+    pd.concat([
+        yearly_imports.assign(direction = "imports"),
+        yearly_exports.assign(direction = "exports")
+    ])
+    .groupby(['year', 'category', 'direction'])['quantity']
+    .sum()
+    .reset_index()
+    .pivot(index=['year','category'], columns='direction', values='quantity')
+    .reset_index()
+    .fillna(0)
+)
+
+from plotly.subplots import make_subplots
+
+fig0 = make_subplots(
+    rows=2, cols=1,
+    # shared_xaxes=True,
+    vertical_spacing=0.15,
+    subplot_titles=("", ""),
+    row_heights=[0.5, 0.5]
+)
+
+for category in yearly_trades['category'].unique():
+    cat_df = yearly_trades.query("category == @category")
+    fig0.add_trace(go.Bar(
+        x=cat_df['year'],
+        y=cat_df['exports'],
+        marker_color=cat_df['category'].map({k: v['base'] for k, v in CATEGORY_COLORS.items()}),
+        name=category,
+    ), row=1, col=1)
+
+for category in yearly_trades['category'].unique():
+    cat_df = yearly_trades.query("category == @category")
+    fig0.add_trace(go.Bar(
+        x=cat_df['year'],
+        y=cat_df['imports'],
+        name=category,
+        marker_color=cat_df['category'].map({k: v['base'] for k, v in CATEGORY_COLORS.items()}),
+        showlegend=False,
+    ), row=2, col=1)
+
+years = yearly_trades['year'].unique()
+
+# Customize the layout
+fig0.update_layout(
+    plot_bgcolor='rgba(0,0,0,0)',
+    paper_bgcolor='rgba(0,0,0,0)',
+    legend=dict(
+        title="",
+        orientation="h",
+        y=1.1,
+        x=0
+    ),
+    # Only apply custom colors in dark mode
+    font=dict(
+        color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
+        size=12
+    ),
+    title=dict(
+        text=f'Exports and Imports for {selected_countries} by Category',
+        font=dict(
+            color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
+            size=16
+        )
+    ),
+    xaxis=dict(
+        gridcolor='rgba(128,128,128,0.1)', 
+        linecolor='rgba(128,128,128,0.2)',
+        title="",
+        tickvals=years,
+        ticktext=years.astype(str),
+        domain=[0,1]
+    ),
+    xaxis2=dict(
+        gridcolor='rgba(128,128,128,0.1)', 
+        linecolor='rgba(128,128,128,0.2)',
+        title="",
+        tickvals=years,
+        ticktext=years.astype(str),
+        domain=[0,1],
+        showticklabels=False
+    ),
+    yaxis=dict(
+        gridcolor='rgba(128,128,128,0.1)', 
+        linecolor='rgba(128,128,128,0.2)',
+        title="Exports (tons)",
+        # zeroline=True,  # Added: more visible zero line
+        # zerolinewidth=2  # Added: thicker zero line
+    ),
+    yaxis2=dict(
+        gridcolor='rgba(128,128,128,0.1)', 
+        linecolor='rgba(128,128,128,0.2)',
+        title="Imports (tons)",
+        range=[yearly_trades.groupby(['year'])['imports'].sum().reset_index().imports.max(), 0]
+    ),
+    barmode="stack",
+    template=get_plotly_template(),
+    margin=dict(b=120, l=50, r=50, t=50),
+    height=400
+)
+
+st.plotly_chart(fig0, use_container_width=True)
+
 # Create tabs for exports and imports
 tab1, tab2 = st.tabs(["Exports Analysis", "Imports Analysis"])
 
@@ -271,20 +503,6 @@ with tab1:
     st.header("Exports Analysis")
     
     # Time series of exports by HS code
-    yearly_exports = (
-        exports.groupby(['year', 'category', 'product'])['quantity']
-        .sum()
-        .reset_index()
-    )
-    
-    # Create labels for the HS codes
-    hs_code_labels = {
-        code: f"{code} - {desc}"
-        for category, products in HS_CODE_CATEGORIES.items()
-        for code, desc in products
-    }
-    yearly_exports['product_label'] = yearly_exports['product'].map(hs_code_labels)
-    
     fig1 = px.bar(
         yearly_exports,
         x='year',
@@ -296,7 +514,7 @@ with tab1:
             'product_label': 'HS Code'
         },
         barmode='stack',
-        color_discrete_sequence=CUSTOM_COLORS,
+        color_discrete_sequence=[HS_CODE_COLORS[code] for code in selected_hs_codes],
         template=get_plotly_template()
     )
     # Customize the layout
@@ -317,7 +535,7 @@ with tab1:
             size=12
         ),
         title=dict(
-            text=f'Export Volumes for {selected_country} by HS Code',
+            text=f'Export Volumes for {selected_countries} by HS Code',
             font=dict(
                 color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
                 size=16
@@ -362,6 +580,9 @@ with tab1:
     # Get the detailed breakdown for top countries
     top_exports = (
         exports_selected_year[exports_selected_year['importer_name'].isin(country_totals.index)]
+        .groupby(['year','product','importer_name'])['quantity']
+        .sum()
+        .reset_index()
         .copy()  # Create a copy to avoid SettingWithCopyWarning
     )
     
@@ -381,7 +602,7 @@ with tab1:
             'importer_name': 'Importing Country',
             'product_label': 'HS Code'
         },
-        color_discrete_sequence=CUSTOM_COLORS,
+        color_discrete_sequence=[HS_CODE_COLORS[code] for code in selected_hs_codes],
         category_orders={'importer_name': country_order},  # Explicitly set the order
         template=get_plotly_template()
     )
@@ -402,7 +623,7 @@ with tab1:
             size=12
         ),
         title=dict(
-            text=f'Top Export Destinations for {selected_country} ({selected_year})',
+            text=f'Top Export Destinations for {selected_countries} ({selected_year})',
             font=dict(
                 color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
                 size=16
@@ -428,13 +649,6 @@ with tab2:
     st.header("Imports Analysis")
     
     # Time series of imports by HS code
-    yearly_imports = (
-        imports.groupby(['year', 'category', 'product'])['quantity']
-        .sum()
-        .reset_index()
-    )
-    
-    yearly_imports['product_label'] = yearly_imports['product'].map(hs_code_labels)
     
     fig3 = px.bar(
         yearly_imports,
@@ -447,7 +661,7 @@ with tab2:
             'product_label': 'HS Code'
         },
         barmode='stack',
-        color_discrete_sequence=CUSTOM_COLORS,
+        color_discrete_sequence=[HS_CODE_COLORS[code] for code in selected_hs_codes],
         template=get_plotly_template()
     )
     fig3.update_layout(
@@ -461,13 +675,13 @@ with tab2:
             xanchor="center",
             x=0.5
         ),
-        # Only apply custom colors in dark mode
+        # Only apply custom colors in dark modes
         font=dict(
             color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
             size=12
         ),
         title=dict(
-            text=f'Import Volumes for {selected_country} by HS Code',
+            text=f'Import Volumes for {selected_countries} by HS Code',
             font=dict(
                 color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
                 size=16
@@ -513,6 +727,9 @@ with tab2:
     # Get the detailed breakdown for top countries
     top_imports = (
         imports_selected_year[imports_selected_year['exporter_name'].isin(country_totals.index)]
+        .groupby(['year','product','exporter_name'])['quantity']
+        .sum()
+        .reset_index()
         .copy()
     )
     
@@ -532,7 +749,7 @@ with tab2:
             'exporter_name': 'Exporting Country',
             'product_label': 'HS Code'
         },
-        color_discrete_sequence=CUSTOM_COLORS,
+        color_discrete_sequence=[HS_CODE_COLORS[code] for code in selected_hs_codes],
         category_orders={'exporter_name': country_order},  # Explicitly set the order
         template=get_plotly_template()
     )
@@ -554,7 +771,7 @@ with tab2:
             size=12
         ),
         title=dict(
-            text=f'Top Import Sources for {selected_country} ({selected_year_imports})',
+            text=f'Top Import Sources for {selected_countries} ({selected_year_imports})',
             font=dict(
                 color='#E0E0E0' if st.get_option("theme.base") == "dark" else None,
                 size=16
@@ -579,8 +796,11 @@ with tab2:
 # Add after the filters section
 st.sidebar.subheader("Download Data")
 filtered_data = df_filtered[
-    (df_filtered['exporter_name'] == selected_country) |
-    (df_filtered['importer_name'] == selected_country)
+    (df_filtered['exporter_name'] == country) |
+    (df_filtered['importer_name'] == country)
+] if country else df_filtered[
+    (df_filtered['exporter_name'].isin(countries)) |
+    (df_filtered['importer_name'].isin(countries))
 ]
 
 if st.sidebar.button('Download Filtered Data'):
@@ -588,6 +808,16 @@ if st.sidebar.button('Download Filtered Data'):
     st.sidebar.download_button(
         label="Click to Download",
         data=csv,
-        file_name=f"lead_trade_{selected_country}_{selected_years[0]}-{selected_years[1]}.csv",
+        file_name=f"lead_trade_{selected_countries}_{selected_years[0]}-{selected_years[1]}.csv",
         mime='text/csv'
-    ) 
+    )
+
+# Add at the very bottom of the file, after all other content
+st.markdown("---")
+st.markdown("<h2 id='product-definitions'>Product Definitions</h2>", unsafe_allow_html=True)
+st.markdown("Our analysis is based on [Harmonized System (HS) codes](https://www.wcotradetools.org/en/harmonized-system), which are a global standard for classifying traded goods.")
+
+for category, products in HS_CODE_CATEGORIES.items():
+    st.markdown(f"### {category}")
+    for hs_code, name in products:
+        st.markdown(f"**{hs_code} - {name}**  \n{PRODUCT_DEFINITIONS[hs_code]}") 
