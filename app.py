@@ -52,6 +52,10 @@ st.markdown("""
     [data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3, [data-theme="dark"] p {
         color: #E0E0E0 !important;
     }
+    /* Fix padding on the top of main section */
+    .block-container {
+        padding-top: 4rem !important;
+    }
     @media (max-width: 768px) {
         .mobile-warning {
             display: block;
