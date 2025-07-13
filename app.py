@@ -14,8 +14,8 @@ st.set_page_config(
 # Add after the imports but before the page configuration
 PRODUCT_DEFINITIONS = {
     '260700': "Lead ores and concentrates - Raw materials extracted from mines.",
-    '780110': "Refined lead (unwrought) - Pure lead metal (99.9%+) that hasn't been worked into products. Main input for battery manufacturing.",
-    '780191': "Other unwrought lead - Refers to unwrought lead (e.g., in ingots or blocks) that is not classified as refined and contains antimony as the principal alloying element by weight.",
+    '780110': "Refined lead (unwrought) - Pure lead metal (99.9%+) that hasn't been worked into products.",
+    '780191': "Unwrought unrefined lead with antimony - Refers to unwrought lead that is unrefined and contains antimony as the principal othre element.",
     '780199': "Other refined lead - Unwrought refined lead metal not elsewhere specified.",
     '850710': "Lead-acid batteries for starting engines - New car batteries and other starting/lighting/ignition batteries.",
     '850720': "Other lead-acid batteries - New non-SLI batteries, including for backup power and electric vehicles.",
@@ -127,8 +127,8 @@ HS_CODE_CATEGORIES = {
     ],
     'New Lead': [
         ('780110', 'Refined lead - unwrought'),
-        ('780191', 'Other unwrought lead'),
-        ('780199', 'Other refined lead')
+        ('780191', 'Other unwrought lead, with antimony'),
+        ('780199', 'Other unrefined lead')
     ],
     'New Batteries': [
         ('850710', 'New lead-acid batteries for starting engines'),
