@@ -26,9 +26,14 @@ def load_trade_data(filepath: str = 'lead_trade_data.csv') -> pd.DataFrame:
     try:
         df = pd.read_csv(filepath, encoding='utf-8')
         
-        # Fix encoding issues
-        df['exporter_name'] = df['exporter_name'].str.replace('TÃ¼rkiye', 'Türkiye', regex=False)
-        df['importer_name'] = df['importer_name'].str.replace('TÃ¼rkiye', 'Türkiye', regex=False)
+        # Fix encoding issues (mojibake: UTF-8 read as Latin-1)
+        encoding_fixes = {
+            'TÃ¼rkiye': 'Türkiye',
+            'CÃ´te d\'Ivoire': 'Côte d\'Ivoire',
+        }
+        for wrong, correct in encoding_fixes.items():
+            df['exporter_name'] = df['exporter_name'].str.replace(wrong, correct, regex=False)
+            df['importer_name'] = df['importer_name'].str.replace(wrong, correct, regex=False)
         
         # Pad product codes to 6 digits
         df['product'] = df['product'].astype(str).str.zfill(6)
