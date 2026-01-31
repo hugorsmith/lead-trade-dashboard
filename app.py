@@ -1,9 +1,17 @@
+"""Lead Trade Dashboard - Main Application.
+
+A Streamlit dashboard for analyzing global lead trade data from 2012-2023.
+Provides interactive visualizations of import/export flows, geographic filtering,
+and data export capabilities.
+"""
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 from plotly.subplots import make_subplots
+from typing import Tuple, Optional
 
 # Import from our modules
 from src.config import (
@@ -25,8 +33,12 @@ from src.filters import (
 from src.charts import get_plotly_template, apply_chart_theme, apply_subplot_theme, apply_choropleth_theme
 
 
-def main():
-    """Main Streamlit application."""
+def main() -> None:
+    """Main Streamlit application entry point.
+
+    Sets up the page configuration, loads data, renders filters and
+    interactive visualizations for analyzing lead trade flows.
+    """
     # Page configuration
     st.set_page_config(
         page_title="Lead Trade Analysis",
@@ -105,20 +117,28 @@ def main():
 
     st.divider()
 
-    # Get current theme from Streamlit (used by chart styling functions)
-    # Note: st.get_option("theme.base") returns None when using default theme
-    def get_current_theme():
+    def get_current_theme() -> str:
+        """Get the current Streamlit theme setting.
+
+        Returns:
+            'light' if theme is explicitly set to light, 'dark' otherwise.
+            Defaults to dark when theme.base is None (system preference).
+        """
         theme_base = st.get_option("theme.base")
-        # Default to dark if not explicitly set to light
-        # This handles users with system dark mode enabled (where theme_base is None)
         return "light" if theme_base == "light" else "dark"
 
     theme = get_current_theme()
 
-    # Load the data with Streamlit caching
     @st.cache_data
-    def load_data_cached():
-        """Load data with Streamlit caching."""
+    def load_data_cached() -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]:
+        """Load trade and country data with Streamlit caching.
+
+        Uses @st.cache_data to cache the loaded DataFrames across reruns,
+        improving performance by avoiding repeated file I/O.
+
+        Returns:
+            Tuple of (trade_df, country_df), or (None, None) on error.
+        """
         try:
             with st.spinner('Loading trade data...'):
                 trade_df = load_trade_data()
