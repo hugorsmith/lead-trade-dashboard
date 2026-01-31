@@ -109,8 +109,9 @@ def main():
     # Note: st.get_option("theme.base") returns None when using default theme
     def get_current_theme():
         theme_base = st.get_option("theme.base")
-        # Default to light if not explicitly set to dark
-        return "dark" if theme_base == "dark" else "light"
+        # Default to dark if not explicitly set to light
+        # This handles users with system dark mode enabled (where theme_base is None)
+        return "light" if theme_base == "light" else "dark"
 
     theme = get_current_theme()
 
