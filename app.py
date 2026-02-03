@@ -417,13 +417,14 @@ def main() -> None:
 
     apply_subplot_theme(
         fig0,
-        title=f'Exports and Imports for {selected_countries} by Category',
+        title='',
         theme=theme,
         height=400,
         years=list(years),
         y2_max=y2_max,
     )
 
+    st.subheader(f'Exports and Imports for {selected_countries} by Category')
     st.plotly_chart(fig0, width='stretch')
 
     # Create tabs for exports and imports
@@ -449,9 +450,10 @@ def main() -> None:
     )
     apply_chart_theme(
         fig1,
-        title=f'Export Volumes for {selected_countries} by HS Code',
+        title='',
         theme=theme,
     )
+    st.subheader(f'Export Volumes for {selected_countries} by HS Code')
     st.plotly_chart(fig1, width='stretch')
 
     # Top export destinations with category breakdown
@@ -508,10 +510,11 @@ def main() -> None:
     )
     apply_chart_theme(
         fig2,
-        title=f'Top Export Destinations for {selected_countries} ({selected_year})',
+        title='',
         theme=theme,
         x_tick_angle=30,
     )
+    st.subheader(f'Top Export Destinations for {selected_countries} ({selected_year})')
     st.plotly_chart(fig2, width='stretch')
 
     with tab2:
@@ -534,9 +537,10 @@ def main() -> None:
         )
         apply_chart_theme(
             fig3,
-            title=f'Import Volumes for {selected_countries} by HS Code',
+            title='',
             theme=theme,
         )
+        st.subheader(f'Import Volumes for {selected_countries} by HS Code')
         st.plotly_chart(fig3, width='stretch')
 
         # Top import sources with category breakdown
@@ -593,10 +597,11 @@ def main() -> None:
     )
     apply_chart_theme(
         fig4,
-        title=f'Top Import Sources for {selected_countries} ({selected_year_imports})',
+        title='',
         theme=theme,
         x_tick_angle=30,
     )
+    st.subheader(f'Top Import Sources for {selected_countries} ({selected_year_imports})')
     st.plotly_chart(fig4, width='stretch')
 
     # Add after the filters section
