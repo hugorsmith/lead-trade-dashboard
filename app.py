@@ -425,7 +425,7 @@ def main() -> None:
     )
 
     st.subheader(f'Exports and Imports for {selected_countries} by Category')
-    st.plotly_chart(fig0, width='stretch')
+    st.plotly_chart(fig0, width='stretch', key='chart_exports_imports_by_category')
 
     # Create tabs for exports and imports
     tab1, tab2 = st.tabs(["Exports Analysis", "Imports Analysis"])
@@ -454,7 +454,7 @@ def main() -> None:
         theme=theme,
     )
     st.subheader(f'Export Volumes for {selected_countries} by HS Code')
-    st.plotly_chart(fig1, width='stretch')
+    st.plotly_chart(fig1, width='stretch', key='chart_export_volumes_by_hs')
 
     # Top export destinations with category breakdown
     st.subheader("Top Export Destinations")
@@ -515,7 +515,7 @@ def main() -> None:
         x_tick_angle=30,
     )
     st.subheader(f'Top Export Destinations for {selected_countries} ({selected_year})')
-    st.plotly_chart(fig2, width='stretch')
+    st.plotly_chart(fig2, width='stretch', key='chart_top_export_destinations')
 
     with tab2:
         st.header("Imports Analysis")
@@ -541,7 +541,7 @@ def main() -> None:
             theme=theme,
         )
         st.subheader(f'Import Volumes for {selected_countries} by HS Code')
-        st.plotly_chart(fig3, width='stretch')
+        st.plotly_chart(fig3, width='stretch', key='chart_import_volumes_by_hs')
 
         # Top import sources with category breakdown
         st.subheader("Top Import Sources")
@@ -602,7 +602,7 @@ def main() -> None:
         x_tick_angle=30,
     )
     st.subheader(f'Top Import Sources for {selected_countries} ({selected_year_imports})')
-    st.plotly_chart(fig4, width='stretch')
+    st.plotly_chart(fig4, width='stretch', key='chart_top_import_sources')
 
     # Add after the filters section
     st.sidebar.subheader("Download Data")
