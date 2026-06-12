@@ -1,6 +1,6 @@
 # Lead Trade Dashboard
 
-An interactive Streamlit dashboard for analyzing global lead trade data from 2012-2023.
+An interactive Streamlit dashboard for analyzing global lead trade data from 2012-2024.
 
 ## Overview
 
@@ -15,7 +15,7 @@ This dashboard provides visualization and analysis of international lead trade f
 
 - **Geographic Filtering**: Filter by region, sub-region, intermediate region, or specific country
 - **Product Selection**: Choose specific HS codes or product categories to analyze
-- **Time Range Selection**: Adjust the year range for analysis (2012-2023)
+- **Time Range Selection**: Adjust the year range for analysis (2012-2024)
 - **Interactive Visualizations**:
   - Choropleth map showing net trade partners
   - Stacked bar charts for exports/imports by category

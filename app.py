@@ -1,6 +1,6 @@
 """Lead Trade Dashboard - Main Application.
 
-A Streamlit dashboard for analyzing global lead trade data from 2012-2023.
+A Streamlit dashboard for analyzing global lead trade data from 2012-2024.
 Provides interactive visualizations of import/export flows, geographic filtering,
 and data export capabilities.
 """
@@ -108,7 +108,7 @@ def main() -> None:
     # Caption and links row (close to title)
     st.markdown("""
     <div style='display: flex; align-items: center; margin-top: -10px; margin-bottom: 5px; gap: 20px; flex-wrap: wrap;'>
-        <span style='color: #888; font-size: 0.85rem;'>Global lead trade data 2012-2023 · CEPII BACI dataset · Weight in tons</span>
+        <span style='color: #888; font-size: 0.85rem;'>Global lead trade data 2012-2024 · CEPII BACI dataset · Weight in tons</span>
         <a href='https://leadbatteries.substack.com/' target='_blank' style='background-color: #FF4B4B; color: white; padding: 4px 10px; border-radius: 4px; text-decoration: none; font-size: 0.8rem;'>📚 Lead Battery Notes</a>
         <a href='https://github.com/hugorsmith/lead-trade-data' style='color: #4A90E2; text-decoration: none; font-size: 0.8rem;'>🔗 Data</a>
         <a href='#product-definitions' style='color: #4A90E2; text-decoration: none; font-size: 0.8rem;'>⬇️ Product Codes</a>

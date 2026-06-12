@@ -29,3 +29,10 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Raw BACI release (large, gitignored — staged for preprocessing)
+data/raw/
+
+# Local backups of the LFS-tracked dataset
+lead_trade_data.csv.bak
+.gstack/
