@@ -1,3 +1,5 @@
+import RangeSlider from './RangeSlider'
+
 // Sidebar: product checklist, year range, and the CSV download.
 // Geography lives in its own row above the charts (see GeoRow), as it did in
 // the original dashboard.
@@ -46,20 +48,12 @@ export default function Filters({ meta, filters, setFilters, onDownload }) {
 
       <section className="group">
         <h2>Years</h2>
-        <div className="range">
-          <output>{start}</output>
-          <span className="range-dash" aria-hidden="true" />
-          <output>{end}</output>
-        </div>
-        <label className="sr-only" htmlFor="year-from">First year</label>
-        <input
-          id="year-from" type="range" min={year_min} max={year_max} value={start}
-          onChange={(e) => setYears(Math.min(+e.target.value, end), end)}
-        />
-        <label className="sr-only" htmlFor="year-to">Last year</label>
-        <input
-          id="year-to" type="range" min={year_min} max={year_max} value={end}
-          onChange={(e) => setYears(start, Math.max(+e.target.value, start))}
+        <RangeSlider
+          min={year_min}
+          max={year_max}
+          start={start}
+          end={end}
+          onChange={setYears}
         />
       </section>
 

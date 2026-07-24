@@ -178,16 +178,89 @@ button, input, select { font: inherit; color: inherit; }
 }
 .swatch.sm { width: 8px; height: 8px; }
 
-.range {
+/* Dual-handle year range (see RangeSlider.jsx). */
+.range-slider { margin-top: 10px; }
+
+.range-readout {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.range-to { color: var(--muted); font-weight: 400; }
+
+.range-track {
+  position: relative;
+  height: 20px;
+  margin: 12px 0 4px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 10px 0 4px;
-  font-family: var(--sans);
-  font-size: 13px;
 }
-.range-dash { flex: 1; height: 1px; background: var(--rule); }
-.sidebar input[type="range"] { width: 100%; accent-color: var(--graphite); }
+.range-rail {
+  position: absolute;
+  left: 0; right: 0;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--rule);
+}
+.range-sel {
+  position: absolute;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--graphite);
+}
+
+/* Two inputs share the track; only their thumbs take pointer events, so both
+   handles stay draggable where they don't overlap. */
+.range-track input[type="range"] {
+  position: absolute;
+  left: 0; right: 0;
+  width: 100%;
+  height: 20px;
+  margin: 0;
+  background: transparent;
+  pointer-events: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.range-track input[type="range"]::-webkit-slider-runnable-track { background: transparent; }
+.range-track input[type="range"]::-moz-range-track { background: transparent; }
+
+.range-track input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--graphite);
+  box-shadow: var(--shadow);
+  cursor: grab;
+}
+.range-track input[type="range"]:active::-webkit-slider-thumb { cursor: grabbing; }
+.range-track input[type="range"]::-moz-range-thumb {
+  pointer-events: auto;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--graphite);
+  box-shadow: var(--shadow);
+  cursor: grab;
+}
+.range-track input[type="range"]:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--graphite);
+  outline-offset: 2px;
+}
+
+.range-bounds {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
 
 /* --- Content ------------------------------------------------------------ */
 
