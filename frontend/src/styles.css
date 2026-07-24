@@ -186,7 +186,7 @@ button, input, select { font: inherit; color: inherit; }
   align-items: baseline;
   gap: 8px;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
 }
 .range-to { color: var(--muted); font-weight: 400; }
