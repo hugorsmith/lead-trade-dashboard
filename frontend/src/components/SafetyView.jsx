@@ -88,8 +88,7 @@ export default function SafetyView({ onBack }) {
           ))}
         </div>
         <p className="hint">
-          These citations are a starting point and under review. The project owner should confirm and
-          expand the sources for each country.
+          These citations are a starting point and under review.
         </p>
       </section>
     </main>
