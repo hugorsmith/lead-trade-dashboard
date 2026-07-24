@@ -12,15 +12,20 @@ PRODUCT_DEFINITIONS = {
     '780200': "Lead waste and scrap - Various non-battery forms of lead metal waste."
 }
 
-# HS codes organized by category
+# HS codes organized by category.
+#
+# "New Lead" (refined lead) leads the order because it is the category this
+# dashboard exists to track — it is the default selection, it is listed first in
+# the filters, and it therefore takes the leading, most-separable colour slots
+# below.
 HS_CODE_CATEGORIES = {
-    'Ores & Concentrates': [
-        ('260700', 'Lead ores and concentrates')
-    ],
     'New Lead': [
         ('780110', 'Refined lead - unwrought'),
         ('780191', 'Other unwrought lead, with antimony'),
         ('780199', 'Other unrefined lead')
+    ],
+    'Ores & Concentrates': [
+        ('260700', 'Lead ores and concentrates')
     ],
     'New Batteries': [
         ('850710', 'New lead-acid batteries for starting engines'),
@@ -32,34 +37,45 @@ HS_CODE_CATEGORIES = {
     ]
 }
 
-# Color scheme for categories
+# Colour scheme.
+#
+# These are the eight slots of a colourblind-safe categorical palette, assigned
+# in the fixed order above — colour follows the product, never its rank, so
+# filtering the selection never repaints the survivors. The ordering is the
+# CVD-safety mechanism: as listed, the worst adjacent pair in a stacked bar
+# measures ΔE 9.1 (OKLab x100) under simulated colour-vision deficiency, above
+# the >=8 target. Re-run the palette validator before changing the order.
+#
+# Yellow, aqua and magenta sit below 3:1 contrast on the white chart surface, so
+# every chart ships a table view and direct value labels rather than relying on
+# hue alone.
 CATEGORY_COLORS = {
-    'Ores & Concentrates': {
-        'base': '#8c6675',  # Sienna brown
+    'New Lead': {
+        'base': '#2a78d6',  # blue
         'codes': {
-            '260700': '#8c6675'  # Same as base since only one code
+            '780110': '#2a78d6',  # blue
+            '780191': '#eb6834',  # orange
+            '780199': '#1baf7a'   # aqua
         }
     },
-    'New Lead': {
-        'base': '#52525b',  # Base gray
+    'Ores & Concentrates': {
+        'base': '#eda100',  # yellow
         'codes': {
-            '780110': '#71717a',  # Darker gray
-            '780191': '#a1a1aa',  # Base gray
-            '780199': '#d4d4d8'   # Lighter gray
+            '260700': '#eda100'
         }
     },
     'New Batteries': {
-        'base': '#16a34a',  # Forest green
+        'base': '#e87ba4',  # magenta
         'codes': {
-            '850710': '#22c55e',  # Darker green
-            '850720': '#4ade80'   # Lighter green
+            '850710': '#e87ba4',  # magenta
+            '850720': '#008300'   # green
         }
     },
     'Used Batteries & Scrap': {
-        'base': '#ea580c',  # Bright orange
+        'base': '#4a3aa7',  # violet
         'codes': {
-            '854810': '#fdba74',  # Darker orange
-            '780200': '#f97316'   # Lighter orange
+            '854810': '#4a3aa7',  # violet
+            '780200': '#e34948'   # red
         }
     }
 }

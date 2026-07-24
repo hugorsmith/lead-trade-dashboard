@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react'
 import { fetchSafety } from '../api'
-import PlotlyFigure from './PlotlyFigure'
+import ChartCard from '../charts/ChartCard'
+import SourceBars from '../charts/SourceBars'
 
-// Standalone "safety of source" page: US refined-lead import sources with
-// countries flagged for unsafe ULAB recycling highlighted in red.
-export default function SafetyView({ theme, onBack }) {
+// Standalone "safety of source" page: US refined-lead import sources, with
+// countries flagged for unsafe used lead-acid battery (ULAB) recycling marked.
+export default function SafetyView({ onBack }) {
   const [data, setData] = useState(null)
   const [year, setYear] = useState(null)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     let cancelled = false
-    fetchSafety({ year, theme })
+    fetchSafety({ year })
       .then((d) => {
         if (cancelled) return
         setData(d)
@@ -19,48 +20,62 @@ export default function SafetyView({ theme, onBack }) {
       })
       .catch((e) => !cancelled && setError(String(e)))
     return () => { cancelled = true }
-  }, [year, theme])
+  }, [year])
 
-  if (error) return <div className="fatal">Error: {error}</div>
+  if (error) return <div className="fatal">Something went wrong: {error}</div>
 
-  const flagColor = data?.flag_color ?? '#ef4444'
+  const flagColor = data?.flagColor ?? '#d03b3b'
 
   return (
-    <main className="content safety-view">
-      <button className="back-link" onClick={onBack}>← Back to dashboard</button>
+    <main className="content safety">
+      <button className="btn back" onClick={onBack}>← Back to the dashboard</button>
 
-      <h1>US Refined Lead Imports by Safety of Source</h1>
-      <p className="subtitle">
-        Sources of refined lead imported into the United States. Countries in{' '}
-        <span style={{ color: flagColor, fontWeight: 600 }}>red</span> have documented hazards
-        from informal used lead-acid battery (ULAB) recycling.
-      </p>
+      <div className="safety-intro">
+        <p className="eyebrow">Refined lead · imports into the USA</p>
+        <h1>Where US refined lead comes from</h1>
+        <p className="lede">
+          Countries marked <span className="flag-token">⚑ flagged</span> have documented hazards from
+          informal used lead-acid battery recycling. The mark, not the colour, carries the meaning.
+        </p>
+      </div>
 
-      <section className="chart-card">
-        <div className="chart-card-head">
-          <h3>Top Import Sources for USA (Refined Lead)</h3>
-          {data && (
-            <label className="year-select">
-              <span>Year</span>
-              <select value={year ?? ''} onChange={(e) => setYear(Number(e.target.value))}>
-                {data.available_years.map((y) => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
-            </label>
-          )}
-        </div>
-        <PlotlyFigure figure={data?.figure} height={560} />
-      </section>
+      <ChartCard
+        title="Import sources, ranked by volume"
+        note={year ? `United States refined-lead imports in ${year}.` : null}
+        control={data && (
+          <label className="field compact">
+            <span>Year</span>
+            <select value={year ?? ''} onChange={(e) => setYear(Number(e.target.value))}>
+              {data.available_years.map((y) => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </label>
+        )}
+        table={data && {
+          columns: ['Source', 'Tons', 'Status'],
+          rows: data.sources.map((s) => [
+            s.name,
+            s.value,
+            data.flaggedNames.has(s.name) ? 'Flagged — unsafe ULAB recycling' : 'Not flagged',
+          ]),
+        }}
+      >
+        {data && (
+          <SourceBars
+            sources={data.sources}
+            flagged={data.flaggedNames}
+            flagColor={flagColor}
+          />
+        )}
+      </ChartCard>
 
       <section className="flagged-panel">
-        <h2>Flagged for unsafe ULAB recycling</h2>
+        <h2>Why these countries are flagged</h2>
         <div className="flagged-grid">
           {(data?.flagged ?? []).map((f) => (
-            <div key={f.country} className="flagged-card" style={{ borderColor: flagColor }}>
-              <h3 style={{ color: flagColor }}>
-                {f.country}
-                {!f.present && <span className="flagged-absent"> (no imports this year)</span>}
+            <article key={f.country} className="flagged-card">
+              <h3>
+                <span aria-hidden="true">⚑</span> {f.country}
+                {!f.present && <span className="muted"> · no imports this year</span>}
               </h3>
               <ul>
                 {f.sources.map((s) => (
@@ -69,11 +84,11 @@ export default function SafetyView({ theme, onBack }) {
                   </li>
                 ))}
               </ul>
-            </div>
+            </article>
           ))}
         </div>
-        <p className="flagged-note">
-          Citations are a starting point and under review — the project owner should confirm and
+        <p className="hint">
+          These citations are a starting point and under review. The project owner should confirm and
           expand the sources for each country.
         </p>
       </section>

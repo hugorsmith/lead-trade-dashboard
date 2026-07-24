@@ -1,27 +1,46 @@
-// Four headline KPI cards with YoY deltas. Formatting mirrors app.py:
-//   value  -> "{:,.0f} mt"      delta -> "{:+.1f}% vs prev year"
-const fmtVol = (n) => `${Math.round(n).toLocaleString('en-US')} mt`
-const fmtDelta = (n) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}% vs prev year`
+import { full } from '../charts/primitives'
 
-function Card({ label, value, delta }) {
-  const dir = delta === undefined ? '' : delta >= 0 ? 'up' : 'down'
+/**
+ * The four headline figures.
+ *
+ * Deltas are deliberately not coloured green/red: a rise in traded tonnage is
+ * neither good nor bad here, and status colours are reserved for the safety
+ * view, where they actually mean something. Direction is carried by a glyph
+ * and the sign instead.
+ */
+function Tile({ label, value, unit, delta, since }) {
   return (
-    <div className="kpi-card">
-      <div className="kpi-label">{label}</div>
-      <div className="kpi-value">{value}</div>
-      {delta !== undefined && <div className={`kpi-delta ${dir}`}>{fmtDelta(delta)}</div>}
+    <div className="kpi">
+      <p className="kpi-label">{label}</p>
+      <p className="kpi-value">
+        {value}
+        {unit && <span className="kpi-unit">{unit}</span>}
+      </p>
+      {delta !== undefined && Number.isFinite(delta) && (
+        <p className="kpi-delta">
+          <span aria-hidden="true">{delta >= 0 ? '▲' : '▼'}</span>{' '}
+          {delta >= 0 ? '+' : '−'}{Math.abs(delta).toFixed(1)}% vs {since}
+        </p>
+      )}
     </div>
   )
 }
 
-export default function KpiRow({ kpis }) {
+export default function KpiRow({ kpis, label }) {
   if (!kpis) return null
+  const since = kpis.metrics_year - 1
+
   return (
-    <div className="kpi-row">
-      <Card label="Total Export Volume" value={fmtVol(kpis.total_exports)} delta={kpis.export_change} />
-      <Card label="Total Import Volume" value={fmtVol(kpis.total_imports)} delta={kpis.import_change} />
-      <Card label="Trade Balance" value={fmtVol(kpis.trade_balance)} />
-      <Card label="Trading Partners" value={kpis.num_partners.toLocaleString('en-US')} />
-    </div>
+    <section className="kpi-row" aria-label={`Key figures for ${label} in ${kpis.metrics_year}`}>
+      <p className="kpi-caption">
+        {label} · {kpis.metrics_year}
+      </p>
+      <div className="kpi-grid">
+        <Tile label="Exported" value={full(kpis.total_exports)} unit="t" delta={kpis.export_change} since={since} />
+        <Tile label="Imported" value={full(kpis.total_imports)} unit="t" delta={kpis.import_change} since={since} />
+        <Tile label="Trade balance" value={full(kpis.trade_balance)} unit="t" />
+        <Tile label="Trading partners" value={kpis.num_partners.toLocaleString()} />
+      </div>
+    </section>
   )
 }

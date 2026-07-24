@@ -2,11 +2,10 @@
 //
 // There is no backend. The browser loads two static assets once
 // (data/meta.json + data/trade.tsv, produced by scripts/export_data.py) and
-// every KPI, aggregation and Plotly figure is computed here on demand.
+// every KPI and chart series is computed here on demand.
 //
-// The functions below keep the request/response *shapes* the old FastAPI
-// endpoints returned, so the components consuming them didn't have to change.
-// They stay async because the first call has to await the initial data load.
+// These functions return plain series data, not rendered figures — the chart
+// components in charts/ own all the drawing.
 //
 // The cascade helpers replicate src/filters.py (get_available_subregions /
 // _intermediate_regions / _countries) exactly: drop rows where the target
@@ -19,30 +18,47 @@ import {
   aggregateCategoryTrade,
   topPartners,
   totalByPartner,
-  buildMapData,
 } from './data/aggregations.js'
-import {
-  buildCategoryTradeFigure,
-  buildHsBarFigure,
-  buildTopPartnersFigure,
-  buildSafetyFigure,
-  buildMapFigure,
-} from './data/figures.js'
 import { FLAG_COLOR, UNSAFE_SOURCES, flaggedCountries } from './data/safety.js'
 
 // --- One-time load --------------------------------------------------------
-let _store = null
 let _loading = null
 
 /** Load (once) and return the in-browser data store. */
 export function ensureStore() {
-  if (!_loading) _loading = loadStore().then((s) => (_store = s))
+  if (!_loading) _loading = loadStore()
   return _loading
 }
 
 /** Refined lead ("New Lead") HS codes — the fixed scope of the safety view. */
 const newLeadCodes = (store) =>
   store.products.allCodes.filter((c) => store.products.toCategory[c] === 'New Lead')
+
+const range = (from, to) =>
+  Array.from({ length: Math.max(to - from + 1, 0) }, (_, i) => from + i)
+
+/**
+ * One series per selected product, over a fixed year axis.
+ * Products with no rows in the selection are dropped so they don't sit in the
+ * legend as permanently-empty entries.
+ */
+function productSeries(store, agg, selectedCodes, years) {
+  const p = store.products
+  return p.allCodes
+    .filter((code) => selectedCodes.includes(code))
+    .map((code) => {
+      const rows = agg.byProduct.get(p.order[code])
+      if (!rows) return null
+      return {
+        key: code,
+        label: p.labels[code],
+        short: `${code}`,
+        color: p.colors[code],
+        values: years.map((y) => rows.get(y) ?? 0),
+      }
+    })
+    .filter(Boolean)
+}
 
 // --- "Endpoints" ----------------------------------------------------------
 
@@ -51,61 +67,79 @@ export async function fetchMeta() {
   return store.meta
 }
 
-/** KPIs + the category subplot, both HS-code bar charts, and the map. */
+/** KPIs, the per-product volume series, and the category mirror series. */
 export async function fetchDashboard(filters) {
   const store = await ensureStore()
-  const theme = filters.theme ?? 'dark'
   const sel = resolveSelection(store, filters)
+
+  // A fixed year axis across every chart, so gaps read as gaps rather than
+  // silently collapsing and misaligning the exports and imports panels.
+  const years = range(sel.yearStart, sel.yearEnd)
 
   const yearlyExports = aggregateByHsYear(store, sel.exportIdx)
   const yearlyImports = aggregateByHsYear(store, sel.importIdx)
   const categoryTrade = aggregateCategoryTrade(store, sel.exportIdx, sel.importIdx, store.products)
-  const mapData = buildMapData(store, sel.exportIdx, sel.importIdx, sel.mapYear)
+
+  const categorySeries = store.products.categories
+    .map((category) => {
+      const rows = categoryTrade.byCategory.get(category)
+      if (!rows) return null
+      return {
+        key: category,
+        label: category,
+        color: store.products.categoryColor[category],
+        exports: years.map((y) => rows.get(y)?.exports ?? 0),
+        imports: years.map((y) => rows.get(y)?.imports ?? 0),
+      }
+    })
+    .filter(Boolean)
 
   return {
     label: sel.label,
     metrics_year: sel.metricsYear,
-    map_year: sel.mapYear,
     year_start: sel.yearStart,
     year_end: sel.yearEnd,
+    years,
     kpis: computeKpis(store, sel.exportIdx, sel.importIdx, sel.metricsYear),
     export_years: sel.exportYears,
     import_years: sel.importYears,
-    figures: {
-      category_trade: buildCategoryTradeFigure(categoryTrade, store.products, theme),
-      exports_by_hs: buildHsBarFigure(yearlyExports, sel.selectedCodes, store.products, theme),
-      imports_by_hs: buildHsBarFigure(yearlyImports, sel.selectedCodes, store.products, theme),
-      map: buildMapFigure(
-        mapData, store,
-        `Net Trade Partners for ${sel.label} (${sel.mapYear})`,
-        theme,
-      ),
-    },
+    exportSeries: productSeries(store, yearlyExports, sel.selectedCodes, years),
+    importSeries: productSeries(store, yearlyImports, sel.selectedCodes, years),
+    categorySeries,
   }
 }
 
 /** Top-20 destinations (exports) or sources (imports) for a chosen year. */
 export async function fetchTop(filters) {
   const store = await ensureStore()
-  const { direction, year, theme = 'dark' } = filters
+  const { direction, year } = filters
   const sel = resolveSelection(store, filters)
 
   const isExports = direction === 'exports'
   const idx = isExports ? sel.exportIdx : sel.importIdx
-  const partnerCol = isExports ? 'importer' : 'exporter'
+  const top = topPartners(store, idx, isExports ? 'importer' : 'exporter', year)
 
-  const top = topPartners(store, idx, partnerCol, year)
+  const partners = top.order.map((p) => store.nameOf(p))
+  const p = store.products
+  const series = p.allCodes
+    .filter((code) => sel.selectedCodes.includes(code))
+    .map((code) => {
+      const i = p.order[code]
+      if (!top.order.some((partner) => top.byPartner.get(partner)?.has(i))) return null
+      return {
+        key: code,
+        label: p.labels[code],
+        color: p.colors[code],
+        values: top.order.map((partner) => top.byPartner.get(partner)?.get(i) ?? 0),
+      }
+    })
+    .filter(Boolean)
 
-  return {
-    direction,
-    year,
-    figure: buildTopPartnersFigure(top, partnerCol, store, sel.selectedCodes, store.products, theme),
-    available_years: isExports ? sel.exportYears : sel.importYears,
-  }
+  return { direction, year, partners, series, available_years: isExports ? sel.exportYears : sel.importYears }
 }
 
 /** US refined-lead import sources, flagged by unsafe-ULAB-recycling status. */
-export async function fetchSafety({ year, theme = 'dark' } = {}) {
+export async function fetchSafety({ year } = {}) {
   const store = await ensureStore()
 
   // Fixed scope: imports INTO the USA, refined lead ("New Lead") only.
@@ -114,21 +148,20 @@ export async function fetchSafety({ year, theme = 'dark' } = {}) {
   const selectedYear = year ?? availableYears[0] ?? sel.yearEnd
 
   const totals = totalByPartner(store, sel.importIdx, 'exporter', selectedYear, 25)
-  const flagged = flaggedCountries()
-
-  // Only surface flagged countries that actually appear as sources this year.
-  const present = new Set(totals.map((t) => store.nameOf(t.partner)))
+  const sources = totals.map((t) => ({ name: store.nameOf(t.partner), value: t.quantity }))
+  const present = new Set(sources.map((s) => s.name))
 
   return {
     year: selectedYear,
     available_years: availableYears,
-    flag_color: FLAG_COLOR,
-    flagged: Object.entries(UNSAFE_SOURCES).map(([country, sources]) => ({
+    flagColor: FLAG_COLOR,
+    flagged: Object.entries(UNSAFE_SOURCES).map(([country, citations]) => ({
       country,
-      sources,
+      sources: citations,
       present: present.has(country),
     })),
-    figure: buildSafetyFigure(totals, store, flagged, FLAG_COLOR, theme),
+    flaggedNames: flaggedCountries(),
+    sources,
   }
 }
 

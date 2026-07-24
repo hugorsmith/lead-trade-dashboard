@@ -20,11 +20,12 @@ locally, so the whole thing can be served from any static host.
 - **Geographic Filtering**: Filter by region, sub-region, intermediate region, or specific country
 - **Product Selection**: Choose specific HS codes or product categories to analyze
 - **Time Range Selection**: Adjust the year range for analysis (2012–2024)
-- **Interactive Visualizations**:
-  - Choropleth map showing net trade partners
-  - Stacked bar charts for exports/imports by category
-  - Top trading partner rankings
+- **Interactive Visualizations** (bespoke SVG, no charting library):
+  - Exports above / imports below a shared baseline, stacked by category
+  - Stacked columns of volume by HS code over time
+  - Ranked top trading partners, broken down by product
   - "Safety of source" view for US refined-lead imports
+- **A table view on every chart**, so no value depends on reading a colour
 - **Data Export**: Download filtered data as CSV (generated in the browser)
 - **Shareable links**: `?country=NGA` (ISO-3) selects a country on load
 
@@ -97,8 +98,9 @@ lead-trade-dashboard/
 │   └── src/
 │       ├── App.jsx        # layout, routing, filter state
 │       ├── api.js         # local "endpoints" + geo cascade
-│       ├── components/    # filters, KPI row, tabs, charts, safety view
-│       └── data/          # store, aggregations, figures, theming, config
+│       ├── charts/        # SVG chart components + scales/formatters
+│       ├── components/    # filters, geo row, KPI row, tabs, safety view
+│       └── data/          # store, aggregations, product config, safety list
 ├── src/                   # Python: config + data loading (used by scripts/)
 ├── scripts/
 │   ├── build_lead_trade_data.py  # builds lead_trade_data.csv from BACI
