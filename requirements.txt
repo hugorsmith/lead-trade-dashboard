@@ -1,5 +1,7 @@
-streamlit
+# The dashboard itself is a static React app with no Python runtime — see
+# frontend/. Python is only needed to (re)build the data assets the browser
+# loads (scripts/export_data.py, scripts/build_lead_trade_data.py) and to run
+# the test suite.
 pandas
-plotly
 numpy
-country_converter 
+plotly
