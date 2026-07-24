@@ -2,9 +2,9 @@
  *
  * Direction: the chrome is achromatic on purpose. Every hue on the page belongs
  * to a product or to the safety flag, so a spot of colour always means data.
- * Structure is carried by hairlines and space; a monospace utility face carries
- * codes, figures and axis ticks, which suits a dataset of HS codes and tonnages
- * and keeps numerals aligned.
+ * Structure is carried by hairlines and space. One sans face throughout; small
+ * labels are set in tracked caps and numbers use tabular figures so columns and
+ * axis ticks stay aligned.
  */
 
 :root {
@@ -21,7 +21,6 @@
   --flag: #d03b3b;
 
   --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
   --radius: 6px;
   --shadow: 0 1px 2px rgba(20, 24, 27, 0.05);
@@ -57,10 +56,10 @@ button, input, select { font: inherit; color: inherit; }
   border-radius: 3px;
 }
 
-/* Eyebrow: the small mono label that names a plane. */
+/* Eyebrow: the small tracked-caps label that names a plane. */
 .eyebrow {
   margin: 0;
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 10.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -151,7 +150,7 @@ button, input, select { font: inherit; color: inherit; }
 .product-group { margin-top: 14px; }
 .group-title {
   margin: 0 0 4px;
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 10.5px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -168,7 +167,7 @@ button, input, select { font: inherit; color: inherit; }
   font-size: 12.5px;
 }
 .check input { margin: 0; accent-color: var(--graphite); }
-.check-code { font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); }
+.check-code { font-family: var(--sans); font-size: 11.5px; color: var(--ink-2); }
 .check-name { color: var(--ink-2); line-height: 1.35; }
 .check:hover .check-name { color: var(--ink); }
 
@@ -184,7 +183,7 @@ button, input, select { font: inherit; color: inherit; }
   align-items: center;
   gap: 10px;
   margin: 10px 0 4px;
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 13px;
 }
 .range-dash { flex: 1; height: 1px; background: var(--rule); }
@@ -220,7 +219,7 @@ button, input, select { font: inherit; color: inherit; }
   display: grid;
   place-items: center;
   min-height: 70vh;
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -233,7 +232,7 @@ button, input, select { font: inherit; color: inherit; }
 
 .kpi-caption {
   margin: 0 0 8px;
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -257,7 +256,7 @@ button, input, select { font: inherit; color: inherit; }
   line-height: 1.15;
 }
 .kpi-unit { margin-left: 4px; font-size: 13px; font-weight: 400; color: var(--muted); }
-.kpi-delta { margin: 5px 0 0; font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); }
+.kpi-delta { margin: 5px 0 0; font-family: var(--sans); font-size: 11.5px; color: var(--ink-2); }
 
 /* --- Chart card --------------------------------------------------------- */
 
@@ -286,7 +285,7 @@ button, input, select { font: inherit; color: inherit; }
   border: 1px solid var(--rule);
   border-radius: 4px;
   background: var(--surface);
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 12px;
   color: var(--ink);
 }
@@ -327,13 +326,13 @@ button, input, select { font: inherit; color: inherit; }
 .baseline { stroke: var(--rule); stroke-width: 1; shape-rendering: crispEdges; }
 
 .tick {
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 10.5px;
   fill: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 .arm-label {
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -342,7 +341,7 @@ button, input, select { font: inherit; color: inherit; }
 .row-label { font-size: 12px; fill: var(--ink-2); }
 .row-label.flagged { fill: var(--flag); font-weight: 600; }
 .row-value {
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 11px;
   fill: var(--ink-2);
   font-variant-numeric: tabular-nums;
@@ -369,7 +368,7 @@ button, input, select { font: inherit; color: inherit; }
 }
 .tooltip-head {
   margin-bottom: 6px;
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 11px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -385,7 +384,7 @@ button, input, select { font: inherit; color: inherit; }
 /* A short stroke, not a filled box — at this density a box is too much ink. */
 .tooltip-key { width: 10px; height: 2px; border-radius: 1px; }
 .tooltip-value {
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -411,7 +410,7 @@ button, input, select { font: inherit; color: inherit; }
 }
 .data-table td.num, .data-table th.num {
   text-align: right;
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-variant-numeric: tabular-nums;
 }
 .data-table tbody th { font-weight: 500; }
@@ -439,7 +438,7 @@ button, input, select { font: inherit; color: inherit; }
 .combobox-label {
   display: block;
   margin-bottom: 4px;
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 10.5px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -507,7 +506,7 @@ button, input, select { font: inherit; color: inherit; }
 .definition { margin-bottom: 12px; }
 .definition dt { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500; }
 .definition dd { margin: 3px 0 0 14px; font-size: 12px; color: var(--muted); line-height: 1.45; }
-.code { font-family: var(--mono); font-size: 11.5px; }
+.code { font-family: var(--sans); font-size: 11.5px; }
 
 /* --- Safety view -------------------------------------------------------- */
 
@@ -569,7 +568,7 @@ button, input, select { font: inherit; color: inherit; }
 
 .plot-note {
   margin: 8px 0 0;
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 10.5px;
   color: var(--muted);
 }

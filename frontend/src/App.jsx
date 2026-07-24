@@ -289,7 +289,7 @@ function TopBar({ meta, onSafety }) {
     <header className="topbar">
       <div className="brand">
         <p className="eyebrow">CEPII BACI · {meta.year_min}–{meta.year_max} · weight in tons</p>
-        <h1>Global lead trade</h1>
+        <h1>Global Lead Trade</h1>
       </div>
       <nav className="topbar-actions">
         <button className="btn btn-flag" onClick={onSafety}>
@@ -297,7 +297,7 @@ function TopBar({ meta, onSafety }) {
         </button>
         <a className="btn" href="#product-definitions">HS codes</a>
         <a className="btn" href="https://github.com/hugorsmith/lead-trade-data" target="_blank" rel="noreferrer">Data</a>
-        <a className="btn" href="https://leadbatteries.substack.com/" target="_blank" rel="noreferrer">Notes</a>
+        <a className="btn" href="https://leadbatteries.substack.com/" target="_blank" rel="noreferrer">Lead Battery Notes</a>
       </nav>
     </header>
   )
