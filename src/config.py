@@ -12,15 +12,20 @@ PRODUCT_DEFINITIONS = {
     '780200': "Lead waste and scrap - Various non-battery forms of lead metal waste."
 }
 
-# HS codes organized by category
+# HS codes organized by category.
+#
+# "New Lead" (refined lead) leads the order because it is the category this
+# dashboard exists to track — it is the default selection, it is listed first in
+# the filters, and it therefore takes the leading, most-separable colour slots
+# below.
 HS_CODE_CATEGORIES = {
-    'Ores & Concentrates': [
-        ('260700', 'Lead ores and concentrates')
-    ],
     'New Lead': [
         ('780110', 'Refined lead - unwrought'),
         ('780191', 'Other unwrought lead, with antimony'),
         ('780199', 'Other unrefined lead')
+    ],
+    'Ores & Concentrates': [
+        ('260700', 'Lead ores and concentrates')
     ],
     'New Batteries': [
         ('850710', 'New lead-acid batteries for starting engines'),
@@ -32,34 +37,41 @@ HS_CODE_CATEGORIES = {
     ]
 }
 
-# Color scheme for categories
+# Product colours ported from the original dashboard on main.
+#
+# Colour follows the product, never its rank, so filtering never repaints the
+# survivors. Shades within a category keep individual HS codes distinguishable.
+#
+# Some lighter slots sit below 3:1 contrast on the white chart surface, so every
+# chart also ships a table view and direct value labels rather than relying on
+# colour alone.
 CATEGORY_COLORS = {
-    'Ores & Concentrates': {
-        'base': '#8c6675',  # Sienna brown
+    'New Lead': {
+        'base': '#52525b',  # base grey
         'codes': {
-            '260700': '#8c6675'  # Same as base since only one code
+            '780110': '#71717a',  # darker grey
+            '780191': '#a1a1aa',  # base grey
+            '780199': '#d4d4d8'   # lighter grey
         }
     },
-    'New Lead': {
-        'base': '#52525b',  # Base gray
+    'Ores & Concentrates': {
+        'base': '#8c6675',  # sienna brown
         'codes': {
-            '780110': '#71717a',  # Darker gray
-            '780191': '#a1a1aa',  # Base gray
-            '780199': '#d4d4d8'   # Lighter gray
+            '260700': '#8c6675'
         }
     },
     'New Batteries': {
-        'base': '#16a34a',  # Forest green
+        'base': '#16a34a',  # forest green
         'codes': {
-            '850710': '#22c55e',  # Darker green
-            '850720': '#4ade80'   # Lighter green
+            '850710': '#22c55e',  # darker green
+            '850720': '#4ade80'   # lighter green
         }
     },
     'Used Batteries & Scrap': {
-        'base': '#ea580c',  # Bright orange
+        'base': '#ea580c',  # bright orange
         'codes': {
-            '854810': '#fdba74',  # Darker orange
-            '780200': '#f97316'   # Lighter orange
+            '854810': '#fdba74',  # darker orange
+            '780200': '#f97316'   # lighter orange
         }
     }
 }
