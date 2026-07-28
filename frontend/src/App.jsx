@@ -35,9 +35,10 @@ const legendOf = (series) => series.map((s) => ({ label: s.label, color: s.color
 export default function App() {
   const [meta, setMeta] = useState(null)
   const [error, setError] = useState(null)
-  // Default landing view: Nigeria's refined-lead trade (top destination: USA).
+  // Default landing view: global refined-lead trade. A ?country= ISO-3 query
+  // parameter can still select a country on first load.
   const [filters, setFilters] = useState({
-    products: NEW_LEAD_CODES, years: null, region: null, subregion: null, intermediate: null, country: 'Nigeria',
+    products: NEW_LEAD_CODES, years: null, region: null, subregion: null, intermediate: null, country: null,
   })
 
   const [dashboard, setDashboard] = useState(null)
@@ -135,7 +136,7 @@ export default function App() {
     )
   }
 
-  const label = dashboard?.label ?? ''
+  const label = dashboard?.label ?? filters.country ?? 'All Countries'
   const years = dashboard?.years ?? []
 
   return (
@@ -151,7 +152,20 @@ export default function App() {
         />
 
         <main className="content">
-          <GeoRow meta={meta} filters={filters} setFilters={setFilters} />
+          <header className="dashboard-heading">
+            <div>
+              <p className="eyebrow">Trade explorer</p>
+              <h2>{label || filters.country || 'Global trade'}</h2>
+            </div>
+            <p className="dashboard-selection">
+              {filters.products.length} products · {(filters.years ?? [meta.year_min, meta.year_max]).join('–')}
+            </p>
+          </header>
+
+          <section className="geo-panel" aria-label="Geographic filters">
+            <p className="geo-panel-label">Geography</p>
+            <GeoRow meta={meta} filters={filters} setFilters={setFilters} />
+          </section>
 
           {noProducts ? (
             <p className="notice">Select at least one product to see data.</p>

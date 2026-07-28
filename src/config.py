@@ -37,45 +37,41 @@ HS_CODE_CATEGORIES = {
     ]
 }
 
-# Colour scheme.
+# Product colours ported from the original dashboard on main.
 #
-# These are the eight slots of a colourblind-safe categorical palette, assigned
-# in the fixed order above — colour follows the product, never its rank, so
-# filtering the selection never repaints the survivors. The ordering is the
-# CVD-safety mechanism: as listed, the worst adjacent pair in a stacked bar
-# measures ΔE 9.1 (OKLab x100) under simulated colour-vision deficiency, above
-# the >=8 target. Re-run the palette validator before changing the order.
+# Colour follows the product, never its rank, so filtering never repaints the
+# survivors. Shades within a category keep individual HS codes distinguishable.
 #
-# Yellow, aqua and magenta sit below 3:1 contrast on the white chart surface, so
-# every chart ships a table view and direct value labels rather than relying on
-# hue alone.
+# Some lighter slots sit below 3:1 contrast on the white chart surface, so every
+# chart also ships a table view and direct value labels rather than relying on
+# colour alone.
 CATEGORY_COLORS = {
     'New Lead': {
-        'base': '#2a78d6',  # blue
+        'base': '#52525b',  # base grey
         'codes': {
-            '780110': '#2a78d6',  # blue
-            '780191': '#eb6834',  # orange
-            '780199': '#1baf7a'   # aqua
+            '780110': '#71717a',  # darker grey
+            '780191': '#a1a1aa',  # base grey
+            '780199': '#d4d4d8'   # lighter grey
         }
     },
     'Ores & Concentrates': {
-        'base': '#eda100',  # yellow
+        'base': '#8c6675',  # sienna brown
         'codes': {
-            '260700': '#eda100'
+            '260700': '#8c6675'
         }
     },
     'New Batteries': {
-        'base': '#e87ba4',  # magenta
+        'base': '#16a34a',  # forest green
         'codes': {
-            '850710': '#e87ba4',  # magenta
-            '850720': '#008300'   # green
+            '850710': '#22c55e',  # darker green
+            '850720': '#4ade80'   # lighter green
         }
     },
     'Used Batteries & Scrap': {
-        'base': '#4a3aa7',  # violet
+        'base': '#ea580c',  # bright orange
         'codes': {
-            '854810': '#4a3aa7',  # violet
-            '780200': '#e34948'   # red
+            '854810': '#fdba74',  # darker orange
+            '780200': '#f97316'   # lighter orange
         }
     }
 }
